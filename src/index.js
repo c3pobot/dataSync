@@ -1,10 +1,10 @@
 'use strict'
-const path = require('path')
 const MongoWrapper = require('mongowrapper')
 const Fetch = require('./fetch')
 const CheckVersions = require('./checkVersions')
 const DataUpdate = require('./dataUpdate')
-const GAME_API_URI = process.env.CLIENT_URL
+const DataBuilder = require('./dataBuilder')
+const GetGameVersions = require('./getGameVersions')
 global.updateInProgress = 0
 global.mongo = new MongoWrapper({
   url: 'mongodb://'+process.env.MONGO_USER+':'+process.env.MONGO_PASS+'@'+process.env.MONGO_HOST+'/',
@@ -29,8 +29,8 @@ const CheckMongo = async()=>{
 }
 
 const CheckAPIReady = async()=>{
-  const obj = await Fetch.json(path.join(GAME_API_URI, 'metadata'), 'POST', {})
-  if(obj?.latestGamedataVersion){
+  const obj = await GetGameVersions()
+  if(obj?.gameVersion){
     console.log('Game API is ready on dataSync Server...')
     UpdateDataVersions()
   }else{
@@ -43,7 +43,7 @@ const UpdateDataVersions = async()=>{
     const obj = (await mongo.find('botSettings', {_id: 'gameVersion'}, {_id: 0, gameVersion: 1, localeVersion: 1}))[0]
     if(obj?.gameVersion && obj?.localeVersion) GameDataVersions = {...GameDataVersions,...obj}
     const gData = (await mongo.find('botSettings', {_id: 'gameData'}, {_id: 0, version: 1}))[0]
-    if(gData?.version) GameDataVersions.gameDataVersion = gData.version
+    if(gData?.version) GameDataVersions.statCalcVersion = gData.version
     StartSync()
   }catch(e){
     console.error(e);
@@ -51,17 +51,21 @@ const UpdateDataVersions = async()=>{
 }
 const StartSync = async()=>{
   try{
-    const obj = await Fetch.json(path.join(GAME_API_URI, 'metadata'), 'POST', {})
-    if(obj?.latestGamedataVersion && GameDataVersions?.gameDataVersion !== obj?.latestGamedataVersion){
-      //console.log('GameData.json update needed')
+    const obj = await GetGameVersions(), status = false, gameDataNeeded = false, statCalcDataNeeded = false
+    if(obj?.gameVersion && obj?.localeVersion){
+      if(GameDataVersions.gameVersion !== obj.gameVersion || GameDataVersions.localeVersion !== obj.localeVersion) gameDataNeeded = true
+      if(GameDataVersions.statCalcVersion !== obj.gameVersion || GameDataVersions.localeVersion !== obj.localeVersion) statCalcDataNeeded = true
     }
-    if(obj?.latestGamedataVersion && (GameDataVersions.gameVersion !== obj?.latestGamedataVersion || GameDataVersions.localeVersion !== obj?.latestLocalizationBundleVersion)){
-      const status = await CheckVersions(obj?.latestGamedataVersion, obj?.latestLocalizationBundleVersion)
-      if(status && !updateInProgress){
-        updateInProgress = 1
-        await DataUpdate(true)
-        updateInProgress = 0
-      }
+    if(gameDataNeeded || statCalcDataNeeded) status = await CheckVersions(obj?.gameDataVersion, obj?.localeVersion)
+    if(status && statCalcDataNeeded && !updateInProgress){
+      updateInProgress = 1
+      await DataBuilder(obj.gameVersion, obj.localeVersion, false)
+      updateInProgress = 0
+    }
+    if(status && gameDataNeeded && !updateInProgress){
+      updateInProgress = 1
+      await DataUpdate(obj.gameVersion, obj.localeVersion, false)
+      updateInProgress = 0
     }
     setTimeout(StartSync, +process.env.UPDATE_INTERVAL || 30000)
   }catch(e){
