@@ -2,7 +2,7 @@
 const path = require('path')
 const Fetch = require('../fetch')
 const getDataFiles = require('./getDataFiles')
-const GAME_API_URI = process.env.API_URI
+const GAME_API_URI = process.env.CLIENT_URL
 
 const getGameVersions = async(newFiles = true)=>{
   try{
@@ -27,12 +27,16 @@ module.exports = async(newFiles = true)=>{
     let { gVersion, lVersion } = await getGameVersions(newFiles)
     if(!gVersion || !lVersion) return;
     if(!newFiles) filesUpdated = true
+    console.log('Starting game data update...')
     if(newFiles){
+      console.log('Getting new files...')
       filesUpdated = await getDataFiles(gVersion, lVersion)
+      if(!filesUpdated) console.log('Error getting game data files')
     }
     if(filesUpdated && status){
       GameDataVersions.gameVersion = gVersion
       GameDataVersions.localeVersion = lVersion
+      await mongo.set('botSettings', {_id: 'gameVersion'}, {gameVersion: gVersion, localeVersion: lVersion})
       console.log('game data updated to '+gVersion+'. Locale updated to '+lVersion+'...')
     }
   }catch(e){
