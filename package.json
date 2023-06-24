@@ -4,7 +4,10 @@
   "description": "sync data files to db for c3po bot",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "update": "chmod a+x updategitdependency.sh && ./updategitdependency.sh",
+    "build": "chmod a+x buildtestimage.sh && ./buildtestimage.sh c3pobot/datasync",
+    "prod": "chmod a+x buildprodimage.sh && ./buildprodimage.sh c3pobot/datasync"
   },
   "author": "scuba75",
   "license": "ISC",
