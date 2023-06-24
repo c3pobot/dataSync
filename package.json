@@ -1,0 +1,15 @@
+{
+  "name": "datasync",
+  "version": "1.0.0",
+  "description": "sync data files to db for c3po bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "scuba75",
+  "license": "ISC",
+  "dependencies": {
+    "mongowrapper": "github:c3pobot/mongowrapper",
+    "node-fetch": "^2.6.7"
+  }
+}
