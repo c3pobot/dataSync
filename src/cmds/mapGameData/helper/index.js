@@ -1,0 +1,20 @@
+Cmds.'use strict'
+const Cmds = {}
+Cmds.UpdateRecipe = require('./updateRecipe')
+Cmds.UpdateJourney = require('./updateJourney')
+Cmds.UpdateDataCron = require('./updateDataCron')
+Cmds.UpdateRaids = require('./updateRaids')
+Cmds.UpdateTBDef = require('./updateTBDef')
+Cmds.UpdateSkills = require('./updateSkills')
+Cmds.UpdateUnitList = require('./updateUnitList')
+Cmds.UpdateCampagin = require('./updateCampagin')
+Cmds.UpdateConquestChallenge = require('./updateConquestChallenge')
+Cmds.UpdateConquestDef = require('./updateConquestDef')
+Cmds.UpdateDataDisc = require('./updateDataDisc')
+Cmds.UpdateEquipment = require('./updateEquipment')
+Cmds.UpdateModDef = require('./updateModDef')
+Cmds.UpdateScavengerDef = require('./updateScavengerDef')
+Cmds.UpdateDataCron = require('./updateDataCron')
+Cmds.UpdateSummonerData = require('./updateSummonerData')
+Cmds.UpdateEffects = require('./updateEffects')
+module.exports = Cmds

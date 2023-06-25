@@ -1,10 +1,11 @@
 'use strict'
 const MongoWrapper = require('mongowrapper')
 const Fetch = require('./fetch')
-const CheckVersions = require('./checkVersions')
-const DataUpdate = require('./dataUpdate')
-const DataBuilder = require('./dataBuilder')
-const GetGameVersions = require('./getGameVersions')
+const getGameVersions = require('./getGameVersions')
+const SYNC_INTERVAL = +(process.env.SYNC_INTERVAL || 1)
+
+const { checkVersions } = require('./cmds')
+
 global.updateInProgress = 0
 global.mongo = new MongoWrapper({
   url: 'mongodb://'+process.env.MONGO_USER+':'+process.env.MONGO_PASS+'@'+process.env.MONGO_HOST+'/',
@@ -12,10 +13,10 @@ global.mongo = new MongoWrapper({
   appDb: process.env.MONGO_DB,
   repSet: process.env.MONGO_REPSET
 })
-global.GameDataVersions = {
+global.dataVersions = {
   gameVersion: null,
   localeVersion: null,
-  gameDataVersion: null
+  statCalcVersion: null
 }
 const CheckMongo = async()=>{
   const status = await mongo.init();
@@ -29,48 +30,25 @@ const CheckMongo = async()=>{
 }
 
 const CheckAPIReady = async()=>{
-  const obj = await GetGameVersions()
+  const obj = await getGameVersions()
   if(obj?.gameVersion){
     console.log('Game API is ready on dataSync Server...')
-    UpdateDataVersions()
+    StartSync()
   }else{
     console.log('Game API is not ready on dataSync Server. Will try again in 5 seconds...')
     setTimeout(()=>CheckAPIReady(), 5000)
   }
 }
-const UpdateDataVersions = async()=>{
-  try{
-    const obj = (await mongo.find('botSettings', {_id: 'gameVersion'}, {_id: 0, gameVersion: 1, localeVersion: 1}))[0]
-    if(obj?.gameVersion && obj?.localeVersion) GameDataVersions = {...GameDataVersions,...obj}
-    const gData = (await mongo.find('botSettings', {_id: 'gameData'}, {_id: 0, version: 1}))[0]
-    if(gData?.version) GameDataVersions.statCalcVersion = gData.version
-    StartSync()
-  }catch(e){
-    console.error(e);
-  }
-}
 const StartSync = async()=>{
   try{
-    const obj = await GetGameVersions(), status = false, gameDataNeeded = false, statCalcDataNeeded = false
+    let obj = await getGameVersions()
     if(obj?.gameVersion && obj?.localeVersion){
-      if(GameDataVersions.gameVersion !== obj.gameVersion || GameDataVersions.localeVersion !== obj.localeVersion) gameDataNeeded = true
-      if(GameDataVersions.statCalcVersion !== obj.gameVersion || GameDataVersions.localeVersion !== obj.localeVersion) statCalcDataNeeded = true
+      await checkVersions(obj)
     }
-    if(gameDataNeeded || statCalcDataNeeded) status = await CheckVersions(obj?.gameDataVersion, obj?.localeVersion)
-    if(status && statCalcDataNeeded && !updateInProgress){
-      updateInProgress = 1
-      await DataBuilder(obj.gameVersion, obj.localeVersion, false)
-      updateInProgress = 0
-    }
-    if(status && gameDataNeeded && !updateInProgress){
-      updateInProgress = 1
-      await DataUpdate(obj.gameVersion, obj.localeVersion, false)
-      updateInProgress = 0
-    }
-    setTimeout(StartSync, +process.env.UPDATE_INTERVAL || 30000)
+    setTimeout(StartSync, SYNC_INTERVAL * 60 * 1000)
   }catch(e){
     console.error(e);
-    setTimeout(StartSync, +process.env.UPDATE_INTERVAL || 30000)
+    setTimeout(StartSync, 5000)
   }
 }
 CheckMongo()

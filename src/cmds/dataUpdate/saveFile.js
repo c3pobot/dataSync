@@ -1,6 +1,8 @@
 const path = require('path')
 const fs = require('fs')
+const Fetch = require('../fetch')
 const DATA_PATH = process.env.DATA_PATH || path.join(baseDir, 'data')
+const dataUrl = process.env.GITHUB_DATA_URI || 'https://raw.githubusercontent.com/swgoh-utils/gamedata/main'
 const ReadFile = async(file)=>{
   try{
     const obj = fs.readFileSync(path.join(DATA_PATH, file))
