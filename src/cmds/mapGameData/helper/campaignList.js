@@ -1,7 +1,7 @@
 'use strict'
 const ReadFile = require('./readFile')
 let errored = false
-const setErrorFlag(err)=>{
+const setErrorFlag = (err)=>{
   try{
     errored = true
     console.error(err)
@@ -175,7 +175,6 @@ const getCampainMap = async(campainMap, data = {})=>{
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    console.log('campaignList updating...')
     errored = false
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     let campaign = await ReadFile('campaign.json', gameVersion)
@@ -193,14 +192,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       if(!status) errored = true
     }
     campaign = null, lang = null, actionCap = null, gear = null, material = null, mysteryMod = null, modSet = null, obj = null
-    if(errored){
-      console.error('campainList update error...')
-    }else{
-      console.log('campainList updated...')
-      return true
-    }
+    if(!errored) return true
   }catch(e){
-    console.error('campainList update error...')
     console.error(e)
   }
 }

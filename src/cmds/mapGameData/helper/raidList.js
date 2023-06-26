@@ -1,13 +1,21 @@
 'use strict'
-const fs = require('fs')
 const ReadFile = require('./readFile')
-const SaveImage = require('../saveImage')
-const publicDir = process.env.PUBLIC_DIR || '/home/node/app/public'
+const CheckImages = require('./checkImages')
 const raidTokens = {
-  RAID_REWARD_CURRENCY_01: {nameKey: 'Shared_Currency_RaidReward_01', icon: 'tex.guild_raid_personal'},
-  RAID_REWARD_CURRENCY_02: {nameKey: 'Shared_Currency_RaidReward_02', icon: 'tex.guild_raid_general'},
-  RAID_REWARD_CURRENCY_03: {nameKey: 'Shared_Currency_RaidReward_03', icon: 'tex.guild_raid_special'},
-  RAID_REWARD_CURRENCY_04: {nameKey: 'Shared_Currency_RaidReward_04', icon: 'tex.guild_raid_special'}
+  RAID_REWARD_CURRENCY_01: { nameKey: 'Shared_Currency_RaidReward_01', icon: 'tex.guild_raid_personal' },
+  RAID_REWARD_CURRENCY_02: { nameKey: 'Shared_Currency_RaidReward_02', icon: 'tex.guild_raid_general' },
+  RAID_REWARD_CURRENCY_03: { nameKey: 'Shared_Currency_RaidReward_03', icon: 'tex.guild_raid_special' },
+  RAID_REWARD_CURRENCY_04: { nameKey: 'Shared_Currency_RaidReward_04', icon: 'tex.guild_raid_special' }
+}
+let errored = false
+const setErrorFlag = (err)=>{
+  try{
+    errored = true
+    console.error(err)
+  }catch(e){
+    errored = true
+    console.error(e);
+  }
 }
 const getRewards = async(preview, lang = {}, rewardList = [], images = [])=>{
   try{
@@ -30,57 +38,38 @@ const getRewards = async(preview, lang = {}, rewardList = [], images = [])=>{
         }
       }
     }
-    return res
+    if(!errored) return res
   }catch(e){
-    console.error(e);
-    console.log(preview)
+    setErrorFlag(e);
   }
 }
-const GetFileNames = (dir)=>{
-  return new Promise(resolve =>{
-    try{
-      fs.readdir(dir, (err, files)=>{
-        if(err) console.error(err);
-        resolve(files)
-      })
-    }catch(e){
-      console.error(e);
-      resolve()
-    }
-  })
-}
-const GetImages = async(images = [], assetVersion)=>{
+const getRaid = async(raid, data = {})=>{
   try{
-    let fileNames = await GetFileNames(publicDir+'/thumbnail')
-    for(let i in images){
-      if(fileNames?.filter(x=>x === images[i]+'.png').length === 0){
-        await SaveImage(assetVersion, images[i], 'thumbnail')
-      }
-    }
+    let campaign = data.campaignNode?.find(x=>x.id === raid?.campaignElementIdentifier?.campaignNodeId)
+    let campaignMission = campaign?.campaignNodeMission
+    raid.nameKey = lang[campaign.nameKey] || campaign.nameKey
+    raid.mission = []
   }catch(e){
-    console.error(e);
+    setErrorFlag(e);
   }
 }
-module.exports = async(errObj, assetVersion)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    console.log('Updating raid definitions ...')
-    let guildRaidList = await ReadFile(baseDir+'/data/files/guildRaid.json')
-    let campainList = await ReadFile(baseDir+'/data/files/campaign.json')
-    let rewardList = await ReadFile(baseDir+'/data/files/mysteryBox.json')
-    let lang = await ReadFile(baseDir+'/data/files/ENG_US.json')
-    let guildCampaign = campainList?.find(x=>x.id === 'GUILD')
-    let campaignNode = guildCampaign?.campaignMap?.find(x=>x.id === 'RAIDS')?.campaignNodeDifficultyGroup[0]?.campaignNode
+    errored = false
+    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
+    let campainList = await ReadFile('campaign.json', gameVersion)
+    let guildRaidList = await ReadFile('guildRaid.json', gameVersion)
+    let rewardList = await ReadFile('mysteryBox.json', gameVersion)
+    if(!lang || !campainList || !rewardList) return
+    let guildCampaign = campainList.find(x=>x.id === 'GUILD')
+    let campaignNode = guildCampaign.campaignMap?.find(x=>x.id === 'RAIDS')?.campaignNodeDifficultyGroup[0]?.campaignNode
+    if(!campaignNode || !guildCampaign) return
+
     let images = [], autoComplete = []
-    if(!guildRaidList || !campaignNode || !lang || !rewardList){
-      errorObj.error++
-      return
-    }
+    let gameData = { lang: lang, campaignNode: campaignNode, rewardList: rewardList }
     for(let i in guildRaidList){
       const raid = JSON.parse(JSON.stringify(guildRaidList[i]))
-      if(!raid?.id){
-        errorObj.error++
-        return
-      }
+
       let campaign = campaignNode?.find(x=>x.id === raid?.campaignElementIdentifier?.campaignNodeId)
       let campaignMission = campaign?.campaignNodeMission
       raid.nameKey = lang[campaign.nameKey] || campaign.nameKey
@@ -113,10 +102,10 @@ module.exports = async(errObj, assetVersion)=>{
          }
          raid.mission.push(mission)
       }
-      mongo.set('raidDef', {_id: guildRaidList[i].id}, raid)
+      await mongo.set('raidList', {_id: guildRaidList[i].id}, raid)
       if(raid?.nameKey && raid?.id) autoComplete.push({name: raid.nameKey, value: raid.id})
     }
-    if(images.length > 0 && assetVersion) GetImages(images, assetVersion)
+    if(images.length > 0 && assetVersion) CheckImages(images, assetVersion, 'thumbnail')
     if(autoComplete?.length > 0) mongo.set('autoComplete', {_id: 'raid'}, {data: autoComplete, include: true})
     errObj.complete++
     guildRaidList = null

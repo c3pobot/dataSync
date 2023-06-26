@@ -3,7 +3,7 @@ const ReadFile = require('./readFile')
 const effectMap = require('./map/effect')
 let langArray, abilityList, effectList, lang, effects, units, missingEffects
 let errored = false
-const setErrorFlag(err)=>{
+const setErrorFlag = (err)=>{
   try{
     errored = true
     console.error(err)
@@ -243,8 +243,7 @@ const mapEffects = async(langKey, langIndex, effects = [])=>{
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    console.log('effectList updating...')
-
+    errored = false
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     let langArray = Object.keys(lang)
     let effectList = await ReadFile('effect.json', gameVersion)
@@ -278,7 +277,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       effects = gameData.effects
       if(effects?.length > 0){
         for(let i in effects){
-          await mongo.set('effects', {_id: effects[i].id}, effects[i])
+          await mongo.set('effectList', {_id: effects[i].id}, effects[i])
           if(effects[i].nameKey && effects[i].units?.length > 0 && effects[i].id && effectAutoComplete.filter(x=>x.name === effects[i].nameKey).length === 0) effectAutoComplete.push({name: effects[i].nameKey, value: effects[i].id})
         }
       }
@@ -290,13 +289,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       }
     }
     langArray = null, abilityList = null, effectList = null, lang = null, effects = null, units = null, missingEffects = null
-    if(errored){
-      console.error('effectList update error...')
-    }else{
-      console.log('effectList updated...')
-      return true
-    }
+    if(!errored) return true
   }catch(e){
-    console.error('effectList update error...')
+    console.error(e)
   }
 }

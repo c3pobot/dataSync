@@ -2,14 +2,22 @@
 const fs = require('fs')
 const path = require('path')
 const pct = require('./maps/pct')
-const SaveImage = require('../saveImage')
+const CheckImages = require('./checkImages')
 const ReadFile = require('./readFile')
-
-const PUBLIC_DIR = process.env.PUBLIC_DIR || '/app/public'
 const enumType = {
   2: 'alignment',
   3: 'faction',
   8: 'unit'
+}
+let errored = false
+const setErrorFlag = (err)=>{
+  try{
+    errored = true
+    console.error(err)
+  }catch(e){
+    errored = true
+    console.error(e);
+  }
 }
 const MapAbility = async(ability = [], lang = {})=>{
   try{
@@ -25,7 +33,7 @@ const MapAbility = async(ability = [], lang = {})=>{
     })
     if(Object.values(res)?.length > 0) return res
   }catch(e){
-    console.error(e);
+    setErrorFlag(e)
   }
 }
 const MapFaction = async(faction = [], lang = {})=>{
@@ -43,7 +51,7 @@ const MapFaction = async(faction = [], lang = {})=>{
     })
     if(Object.values(res)?.length > 0) return res
   }catch(e){
-    console.error(e);
+    setErrorFlag(e)
   }
 }
 const MapUnits = async(units = [], faction = {}, lang = {})=>{
@@ -66,7 +74,7 @@ const MapUnits = async(units = [], faction = {}, lang = {})=>{
     })
     if(Object.values(res)?.length > 0) return res
   }catch(e){
-    console.error(e);
+    setErrorFlag(e)
   }
 }
 const MapStatEnum = (enums = {}, lang = {})=>{
@@ -89,44 +97,10 @@ const MapStatEnum = (enums = {}, lang = {})=>{
     }
     if(Object.value(res)?.length > 0) return res
   }catch(e){
-    console.error(e);
+    setErrorFlag(e)
   }
 }
-const GetFileNames = (dir)=>{
-  return new Promise(resolve =>{
-    try{
-      fs.readdir(dir, (err, files)=>{
-        if(err) console.error(err);
-        resolve(files)
-      })
-    }catch(e){
-      console.error(e);
-      resolve()
-    }
-  })
-}
-const CheckImages = async(imgs = [], assetVersion)=>{
-  try{
-    const assests = await GetFileNames(path.join(PUBLIC_DIR, 'thumbnail'))
-    let missingAssets = imgs?.filter(x=>!assests.includes(x+'.png'))
-    if(missingAssets?.length > 0){
-      missingAssets.forEach(img=>{
-        if(img.startsWith('icon_stat_')) return;
-        SaveImage(assetVersion, img, 'thumbnail')
-      })
-    }
-  }catch(e){
-    console.error(e);
-  }
-}
-let errored = false
-const setErrorFlag(err)=>{
-  try{
-    errored = true
-  }catch(e){
-    console.error(e);
-  }
-}
+
 const getTarget = async(category, affix, data = {})=>{
   try{
     if(!category || !affix) return
@@ -202,7 +176,6 @@ const getCron = async(cronTier, data = {})=>{
 
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    console.log('datacronList updating...')
     errored = false
     if(!assetVersion) return
     let crons = {}, images = []
@@ -236,32 +209,26 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       cron.expirationTimeMs = +cronSet.expirationTimeMs
       cron.iconKey = cronSet.icon
       cron.detailPrefab = cronSet.detailPrefab
+      let gameData = {affix: affix, ability: ability, faction: faction, stats: stats, targetSet: targetSet, units: units, images: [], cron: cron, tierIndex: i }
       for(let i in cron.tier){
         if(errored) continue
-        let status = await getCron(cron.tier[i], {affix: affix, ability: ability, faction: faction, stats: stats, targetSet: targetSet, units: units, images: [], cron: cron, tierIndex: i })
+        gameData.tierIndex = i
+        let status = await getCron(cron.tier[i], gameData)
         if(status) cron = status.cron
         if(!status) errored = true
       }
       if(!errored){
         await mongo.set('datacronList', {_id: crons.id}, cron)
-        data.images?.forEach(i=>{
+        gameData.images?.forEach(i=>{
           images.push(i)
         })
       }
     })
-    if(!errored && images?.length > 0 && assetVersion){
-      CheckImages(images, assetVersion)
-    }
+    if(!errored && images?.length > 0) CheckImages(images, assetVersion, 'thumbnail')
     stats = null, faction = null, units = null, ability = null, crons = null, images = null
     abilityList = null, lang = null, unitList = null, factionList = null, targetSet = null, enums = null
-    if(errored){
-      console.error('datacronList update error...')
-    }else{
-      console.log('datacronList updated...')
-      return true
-    }
+    if(!errored) return true
   }catch(e){
-    console.error('datacronList update error...')
     console.error(e);
   }
 }

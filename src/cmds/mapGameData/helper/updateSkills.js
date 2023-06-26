@@ -127,7 +127,7 @@ module.exports = async(errObj)=>{
         if(units[i].ultimate) units[i].ultimate = Object.values(units[i].ultimate)
         if(units[i].skills){
           units[i].skills = Object.values(units[i].skills)
-          await mongo.set('skills', {_id: units[i].baseId}, units[i])
+          await mongo.set('skillList', {_id: units[i].baseId}, units[i])
         }
       }
       errObj.complete++;

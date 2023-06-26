@@ -1,7 +1,7 @@
 'use strict'
 const ReadFile = require('./readFile')
 let errored = false
-const setErrorFlag(err)=>{
+const setErrorFlag = (err)=>{
   try{
     errored = true
     console.error(err)
@@ -82,7 +82,6 @@ const getDiff = async(conquestDifficulty, data = {})=>{
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    console.log('Updating conquestList...')
     errored = false
     let cqDef = await ReadFile('conquestDefinition.json', gameVersion)
     if(!cqDef) return
@@ -97,14 +96,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       }
     }
     cqDef = null
-    if(errored){
-      console.error('conquestList update error...')
-    }else{
-      console.log('conquestList updated...')
-    }
+    if(!errored) return true
   }catch(e){
-    errored = true
-    console.error('conquestList update error...')
     console.error(e)
   }
 }

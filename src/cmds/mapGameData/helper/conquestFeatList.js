@@ -2,7 +2,6 @@
 const ReadFile = require('./readFile')
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    console.log('conquestFeatList updating...')
     let cqDef = await ReadFile('challenge.json', gameVersion)
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     if(!cqDef || !lang) return
@@ -19,10 +18,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       await mongo.set('conquestFeatList', {_id: c.id}, tempObj)
     })
     lang = null, cqDef = null
-    console.log('conquestFeatList updated...')
     return true
   }catch(e){
-    console.error('conquestFeatList update error...')
     console.error(e)
   }
 }

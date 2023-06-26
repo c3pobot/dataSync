@@ -3,7 +3,6 @@ const ReadFile = require('./readFile')
 const GetRecipeList = require('./getRecipeList')
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try {
-    console.log('equipmentList updating ...')
     let equipmentList = await ReadFile('equipment.json', gameVersion)
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     let recipeList = await GetRecipeList(gameVersion, localeVersion, assetVersion)
@@ -22,8 +21,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       mongo.set('equipmentList', {_id: x.id}, tempObj)
     })
     equipmentList = null, lang = null, recipeList = null
-    console.log('equipmentList updated...')
+    return true
   } catch (e) {
-    console.error('equipmentList update error...');
+    console.error(e);
   }
 }

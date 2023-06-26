@@ -17,7 +17,6 @@ const MapUnits = async(units = [], lang = {})=>{
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    console.log('journeyGuide updating...')
     let guideDef = await ReadFile('unitGuideDefinition.json', gameVersion)
     let unitList = await ReadFile('units.json', gameVersion)
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
@@ -35,11 +34,12 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
         if(autoComplete.filter(x=>x.name === manualGuides[i].name).length === 0) autoComplete.push(manualGuides[i])
       }
     }
-    if(autoComplete?.length > 0) await mongo.set('autoComplete', {_id: 'journey'}, {data: autoComplete, include: true})
-    console.log('journeyGuide update complete...')
+    if(autoComplete?.length > 0){
+      await mongo.set('autoComplete', {_id: 'journey'}, {data: autoComplete, include: true})
+      await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.journey': 'journey'})
+    }
     return true
   }catch(e){
-    console.error('journeyGuide update error...')
     console.error(e);
   }
 }
