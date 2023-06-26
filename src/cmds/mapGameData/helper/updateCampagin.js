@@ -1,8 +1,182 @@
 'use strict'
 const ReadFile = require('./readFile')
-module.exports = async(gameVersion, localeVersion)=>{
+let errored = false
+const setErrorFlag(err)=>{
   try{
-    console.log('Updaing campaign data ...')
+    errored = true
+    console.error(err)
+  }catch(e){
+    errored = true
+    console.error(e);
+  }
+}
+const getEnergy = async(energy)=>{
+  try{
+    let res = {
+      id: energy[0].id,
+      type: energy[0].type,
+      qty: energy[0].minQuantity
+    }
+    for(let i in energy){
+      if(energy[i].minQuantity > res.energy.qty){
+        res.energy = {
+          id: energy[i].id,
+          type: energy[i].type,
+          qty: energy[i].minQuantity
+        }
+      }
+    }
+    return res
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+const getReward = async(reward, data = {})=>{
+  try{
+    if(reward.id && !reward.id.includes('GRIND') && !reward.id.includes('xp-mat') && !reward.id.includes('FORCE_POINT') && !reward.id.includes('ability_mat')){
+      let tempReward = {
+        id: reward.id,
+        qty: reward.maxQuantity
+      }
+      let gear = data.gear?.find(x=>x.id === reward.id)
+      if(gear){
+        tempReward.nameKey = data.lang[gear.nameKey] || gear.nameKey;
+        tempReward.icon = gear.iconKey
+        tempReward.gear = true
+        tempReward.mod = false
+        tempReward.tier = gear.tier
+        tempReward.mark = gear.mark
+      }
+      if(tempReward.nameKey) return tempReward
+      let material = data.material?.find(x=>x.id === reward.id)
+      if(material){
+        tempReward.nameKey = data.lang[material.nameKey] || material.nameKey;
+        tempReward.icon = material.iconKey
+        tempReward.gear = false
+        tempReward.mod = false
+      }
+      if(tempReward.nameKey) return tempReward
+      let tempMod = data.mysteryMod.find(x=>x.id == reward.id)
+      if(tempMod){
+        tempReward.nameKey = data.lang['StatMod_Name_Rarity_'+tempMod.minRarity]
+        let modSet = data.modSet.find(x=>x.id == tempMod.setId)
+        if(modSet) tempReward.nameKey += lang[modSet.name] || modSet.name
+
+        if(tempMod.slot?.length === 1) tempReward.nameKey += ' '+data.lang['StatMod_Name_Slot_'+(+tempMod.slot[0] - 1)]
+        tempReward.gear = false
+        tempReward.mod = true
+      }
+      return tempReward
+    }
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+const getRewards = async(rewards, data = {})=>{
+  try{
+    let res = []
+    for(let i in rewards){
+      if(errored) return
+      let reward = await getReward(rewards[i], data)
+      if(reward) res.push(rewards)
+    }
+    return res
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+const getCampainMission = async(campainMission, data = {})=>{
+  try{
+    if(!campainMission) return
+    let res = {
+      id: data.campaignId+'-'+data.campaignMapId+'-'+data.campaignNodeDifficulty+'-'+data.campaignNodeId+'-'+campainMission.id,
+      campaignMissionIdentifier: {
+        campaignId: data.campaignId,
+        campaignMapId:  data.campaignMapId,
+        campaignNodeDifficulty: +data.campaignNodeDifficulty,
+        campaignNodeId: data.campaignNodeId,
+        campaignMissionId: data.campainMission.id,
+      },
+      mapNameKey: data.mapNameKey,
+      missionNameKey: data.lang[campainMission.shortNameKey] || campainMission.shortNameKey,
+      rewards: [],
+      energy: null
+    }
+    let actionCap = data.actionCap.find(x=>x.id == campainMission.dailyBattleCapKey)
+    if(actionCap?.maxActions) res.dailyBattleCapKey = +actionCap.maxActions
+    if(campainMission.rewardPreview){
+      let rewards = await getRewards(campainMission.rewardPreview, data)
+      if(rewards){
+        res.rewards = rewards
+      }else{
+        errored = true
+      }
+    }
+    if(campainMission.entryCostRequirement?.length > 0){
+      let energy = await getEnergy(campainMission.entryCostRequirement)
+      if(energy){
+        res.energy = energy
+      }else{
+        errored = true
+      }
+    }
+    if(!errored) return res
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+const getCampainMissions = async(campaignNode, data = {})=>{
+  try{
+    if(!campaignNode) return
+    data.campaignNodeId = campaignNode.id
+    for(let i in campaignNode.campaignNodeMission){
+      if(errored) return
+      if(campaignNode.campaignMissions[i].grindEnabled){
+        let status = await getCampainMission(campaignNode.campaignMissions[i], data)
+        if(status?.id){
+          await mongo.set('campaignList', {_id: status.id}, status)
+        }else{
+          errored = true
+        }
+      }
+    }
+    if(!errored) return true
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+const getDiffGroups = async(diffGroups, data = {})=>{
+  try{
+    if(!diffGroups) return
+    for(let i in diffGroups){
+      if(errored) return
+      data.campaignNodeDifficulty = diffGroup[i].campaignNodeDifficulty
+      let status = await getCampainMissions(diffGroups[i].campaignNode, data)
+      if(!status) errored = true
+    }
+    if(!errored) return true
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+const getCampainMap = async(campainMap, data = {})=>{
+  try{
+    if(!campainMap) return
+    data.campaignMapId = campainMap.id
+    for(let i in campainMap.campaignNodeDifficultyGroup){
+      if(errored) return
+      let status = await getDiffGroups(campainMap.campaignNodeDifficultyGroup[i])
+      if(!status) errored = true
+    }
+    if(!errored) return true
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+module.exports = async(gameVersion, localeVersion, assetVersion)=>{
+  try{
+    console.log('campaignList updating...')
+    errored = false
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     let campaign = await ReadFile('campaign.json', gameVersion)
     let actionCap = await ReadFile('dailyActionCap.json', gameVersion)
@@ -13,98 +187,20 @@ module.exports = async(gameVersion, localeVersion)=>{
     if(!lang || !campaign || !actionCap || !gear || !material || !mysteryMod || !modSet) return
     let obj = campaign.filter(x=>x.grindEnabled), data = []
     for(let i in obj){
-      let campaignId = obj[i].id, mapNameKey = lang[obj[i].nameKey] ? lang[obj[i].nameKey].replace(/\\n/g, ' ').replace(' BATTLES', ''):obj[i].nameKey, campaignMap = obj[i].campaignMap
-      for(let m in campaignMap){
-        let campaignMapId = campaignMap[m].id, diffGroup = campaignMap[m].campaignNodeDifficultyGroup
-        for(let d in diffGroup){
-          let campaignNodeDifficulty = diffGroup[d].campaignNodeDifficulty, campaignNode = diffGroup[d].campaignNode
-          for(let n in campaignNode){
-            let campaignNodeId = campaignNode[n].id, campaignMissions = campaignNode[n].campaignNodeMission
-            for(let m in campaignMissions){
-              if(campaignMissions[m].grindEnabled){
-                let rewards = campaignMissions[m].rewardPreview, energy = campaignMissions[m].entryCostRequirement
-                let tempObj = {
-                  _id: campaignId+'-'+campaignMapId+'-'+campaignNodeDifficulty+'-'+campaignNodeId+'-'+campaignMissions[m].id,
-                  campaignMissionIdentifier: {
-                    campaignId: campaignId,
-                    campaignMapId:  campaignMapId,
-                    campaignNodeDifficulty: +campaignNodeDifficulty,
-                    campaignNodeId: campaignNodeId,
-                    campaignMissionId: campaignMissions[m].id,
-                  },
-                  mapNameKey: mapNameKey,
-                  missionNameKey: lang[campaignMissions[m].shortNameKey] ? lang[campaignMissions[m].shortNameKey]:campaignMissions[m].shortNameKey,
-                  rewards: [],
-                  energy: null
-                }
-                if(campaignMissions[m].dailyBattleCapKey && actionCap.find(x=>x.id == campaignMissions[m].dailyBattleCapKey)){
-                  tempObj.dailyBattleCapKey = +actionCap.find(x=>x.id == campaignMissions[m].dailyBattleCapKey).maxActions
-                }
-                for(let r in rewards){
-                  if(rewards[r].id && !rewards[r].id.includes('GRIND') && !rewards[r].id.includes('xp-mat') && !rewards[r].id.includes('FORCE_POINT') && !rewards[r].id.includes('ability_mat')){
-                    let tempReward = {
-                      id: rewards[r].id,
-                      qty: rewards[r].maxQuantity
-                    }
-                    if(gear.find(x=>x.id == rewards[r].id)){
-                      tempReward.nameKey = lang[gear.find(x=>x.id == rewards[r].id).nameKey] ? lang[gear.find(x=>x.id == rewards[r].id).nameKey]:gear.find(x=>x.id == rewards[r].id).nameKey;
-                      tempReward.icon = gear.find(x=>x.id == rewards[r].id).iconKey
-                      tempReward.gear = true
-                      tempReward.mod = false
-                      tempReward.tier = gear.find(x=>x.id == rewards[r].id).tier
-                      tempReward.mark = gear.find(x=>x.id == rewards[r].id).mark
-                    }
-                    if(!tempReward.nameKey && material.find(x=>x.id == rewards[r].id)){
-                       tempReward.nameKey = lang[material.find(x=>x.id == rewards[r].id).nameKey] ? lang[material.find(x=>x.id == rewards[r].id).nameKey]:material.find(x=>x.id == rewards[r].id).nameKey;
-                       tempReward.icon = material.find(x=>x.id == rewards[r].id).iconKey
-                       tempReward.gear = false
-                       tempReward.mod = false
-                    }
-                    if(!tempReward.nameKey && mysteryMod.find(x=>x.id == rewards[r].id)){
-                      let tempMod = mysteryMod.find(x=>x.id == rewards[r].id)
-                      tempReward.nameKey = lang['StatMod_Name_Rarity_'+tempMod.minRarity]
-                      if(modSet.find(x=>x.id == tempMod.setId)) tempReward.nameKey += ' '+(lang[modSet.find(x=>x.id == tempMod.setId).name] ? lang[modSet.find(x=>x.id == tempMod.setId).name]:modSet.find(x=>x.id == tempMod.setId).name)
-                      if(tempMod.slot && tempMod.slot.length == 1) tempReward.nameKey += ' '+lang['StatMod_Name_Slot_'+(+tempMod.slot[0] - 1)]
-                      tempReward.gear = false
-                      tempReward.mod = true
-                    }
-                    tempObj.rewards.push(tempReward)
-                  }
-                }
-                if(energy && energy.length > 0){
-                  tempObj.energy = {
-                    id: energy[0].id,
-                    type: energy[0].type,
-                    qty: energy[0].minQuantity
-                  }
-                  for(let e in energy){
-                    if(energy[e].minQuantity > tempObj.energy.qty){
-                      tempObj.energy = {
-                        id: energy[e].id,
-                        type: energy[e].type,
-                        qty: energy[e].minQuantity
-                      }
-                    }
-                  }
-                }
-                await mongo.set('campaign', {_id: campaignId+'-'+campaignMapId+'-'+campaignNodeDifficulty+'-'+campaignNodeId+'-'+campaignMissions[m].id}, tempObj)
-              }
-            }
-          }
-        }
-      }
+      if(errored) return
+      let campaignId = obj[i].id, mapNameKey = lang[obj[i].nameKey] ? lang[obj[i].nameKey].replace(/\\n/g, ' ').replace(' BATTLES', ''):obj[i].nameKey
+      let status = await getCampainMap(obj[i], { campaignId: campaignId, mapNameKey: mapNameKey, actionCap: actionCap, gear: gear, material: material, mysteryMod: mysteryMod, modSet: modSet })
+      if(!status) errored = true
     }
-    campaign = null
-    lang = null
-    actionCap = null
-    gear = null
-    material = null
-    mysteryMod = null
-    modSet = null
-    obj = null
-    return true
+    campaign = null, lang = null, actionCap = null, gear = null, material = null, mysteryMod = null, modSet = null, obj = null
+    if(errored){
+      console.error('campainList update error...')
+    }else{
+      console.log('campainList updated...')
+      return true
+    }
   }catch(e){
-    console.error('error updating campaign data')
+    console.error('campainList update error...')
     console.error(e)
   }
 }

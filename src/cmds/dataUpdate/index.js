@@ -1,7 +1,7 @@
 'use strict'
 const getDataFiles = require('./getDataFiles')
 const mapGameData = require('./mapGameData')
-module.exports = async(gameVersion, localeVersion, forceFile = false)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion, forceFile = false)=>{
   try{
     let res = { gameVersion: null, localeVersion: null, statCalcVersion: null }
     if(!gameVersion || !localeVersion) return res;
@@ -18,7 +18,7 @@ module.exports = async(gameVersion, localeVersion, forceFile = false)=>{
       res.gameVersion = gameVersion
       res.localeVersion = localeVersion
     }else{
-      status = await mapGameData()
+      status = await mapGameData(gameVersion, localeVersion, assetVersion)
       if(status === true){
         res.gameVersion = gameVersion
         res.localeVersion = localeVersion

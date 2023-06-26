@@ -2,9 +2,9 @@
 const ReadFile = require('./readFile')
 const getAbilityList = require('./getAbilityList')
 const enumOmicron = require('./maps/omicrons')
-module.exports = async(gameVersion, localeVersion)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try {
-    let abilityList = await getAbilityList(gameVersion, localeVersion)
+    let abilityList = await getAbilityList(gameVersion, localeVersion, assetVersion)
     let skillList = await ReadFile('skill.json', gameVersion)
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     if(!abilitList || !skillList || !lang) return

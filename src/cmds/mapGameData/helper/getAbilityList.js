@@ -1,6 +1,6 @@
 'use strict'
 const ReadFile = require('./readFile')
-module.exports = async(gameVersion, localeVersion)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try {
     let abilitList = await ReadFile('ability.json', gameVersion)
     if(!abilitList) return

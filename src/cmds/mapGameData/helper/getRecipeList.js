@@ -1,6 +1,6 @@
 'use strict'
 const ReadFile = require('./readFile')
-module.exports = async(gameVersion, localeVersion)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     let recipeList = await ReadFile('recipe.json', gameVersion)
@@ -15,8 +15,7 @@ module.exports = async(gameVersion, localeVersion)=>{
         })
       }
     })
-    obj = null;
-    lang = null;
+    obj = null, lang = null;
     return list;
   }catch(e){
     console.error(e)

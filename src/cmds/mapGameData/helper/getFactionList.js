@@ -1,7 +1,7 @@
 'use strict'
 const ReadFile = require('./readFile')
 const altName = {'species_wookiee_ls': 'Light Side Wookiee'}
-module.exports = async(gameVersion, localeVersion)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try {
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     let categoryList = await ReadFile('category.json', gameVersion)

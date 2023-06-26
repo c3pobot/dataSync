@@ -1,10 +1,10 @@
 'use strict'
 const ReadFile = require('./readFile')
-module.exports = async(gameVersion, localeVersion)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    console.log('Updating Conquest Feats ...')
+    console.log('conquestFeatList updating...')
     let cqDef = await ReadFile('challenge.json', gameVersion)
-    let lang = await ReadFile('ENG_US.json', localeVersion)
+    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     if(!cqDef || !lang) return
     cqDef = cqDef.filter(x=>x.reward.filter(x=>x.type === 22).length > 0)
     cqDef.forEach(async(c)=>{
@@ -16,13 +16,13 @@ module.exports = async(gameVersion, localeVersion)=>{
         type: c.type,
         difficulty: (c.id.includes('_III_DIFF') ? 10:(c.id.includes('_II_DIFF') ? 9:8))
       }
-      await mongo.set('cqFeats', {_id: c.id}, tempObj)
+      await mongo.set('conquestFeatList', {_id: c.id}, tempObj)
     })
-    lang = null
-    cqDef = null
+    lang = null, cqDef = null
+    console.log('conquestFeatList updated...')
     return true
   }catch(e){
-    console.error('error updating conquest feats...')
+    console.error('conquestFeatList update error...')
     console.error(e)
   }
 }

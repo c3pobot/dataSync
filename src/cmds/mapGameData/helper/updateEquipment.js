@@ -1,35 +1,29 @@
 'use strict'
 const ReadFile = require('./readFile')
 const GetRecipeList = require('./getRecipeList')
-module.exports = async(errObj)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try {
-    console.log('Updating Equipment ...')
-    let obj = await ReadFile(baseDir+'/data/files/equipment.json')
-    let lang = await ReadFile(baseDir+'/data/files/ENG_US.json')
-    let recipeList = await GetRecipeList(errObj)
-    if(obj && lang && recipeList){
-      for(let i in obj){
-        const tempObj = {
-          id: obj[i].id,
-          nameKey: (lang[obj[i].nameKey] || obj[i].nameKey),
-          iconKey: obj[i].iconKey,
-          tier: obj[i].tier,
-          mark: obj[i].mark,
-          recipeId: obj[i].recipeId
-        }
-        if(obj[i].recipeId && recipeList.find(x=>x.id == obj[i].recipeId)) tempObj.recipe = (recipeList.find(x=>x.id == obj[i].recipeId) ? recipeList.find(x=>x.id == obj[i].recipeId).ingredients:[])
-        mongo.set('equipment', {_id: obj[i].id}, tempObj)
+    console.log('equipmentList updating ...')
+    let equipmentList = await ReadFile('equipment.json', gameVersion)
+    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
+    let recipeList = await GetRecipeList(gameVersion, localeVersion, assetVersion)
+    if(!equipmentList || !lang || !recipeList) return
+    equipmentList.forEach(x=>{
+      let tempObj = {
+        id: x.id,
+        nameKey: (lang[x.nameKey] || x.nameKey),
+        iconKey: x.iconKey,
+        tier: x.tier,
+        mark: x.mark,
+        recipeId: x.recipeId
       }
-      obj = null
-      lang = null
-      recipeList = null
-      errObj.complete++
-    }else{
-      errObj.error++
-      return
-    }
+      let recipe = recipeList.find(y=>y.id == x.recipeId)
+      tempObj.recipe = recipe?.ingredients || []
+      mongo.set('equipmentList', {_id: x.id}, tempObj)
+    })
+    equipmentList = null, lang = null, recipeList = null
+    console.log('equipmentList updated...')
   } catch (e) {
-    console.log(e)
-    errObj.error++
+    console.error('equipmentList update error...');
   }
 }

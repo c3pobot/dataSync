@@ -5,10 +5,10 @@ const getGameVersions = require('../getGameVersions')
 
 module.exports = async(versions = {}, forceFile = false)=>{
   try{
-    if(!versions.gameVersion || !versions.localeVersion){
+    if(!versions.gameVersion || !versions.localeVersion ||!version.assetVersion){
       versions = await getGameVersions()
     }
-    if(!versions.gameVersion || !versions.localeVersion) return
+    if(!versions.gameVersion || !versions.localeVersion ||!version.assetVersion) return
     let gitVersions = await getDataVersions()
     if(!gitVersions?.gameVersion || !gitVersions?.localeVersion) return
     if(!forceFile && dataVersions.gameVersion === versions.gameVersion && dataVersions.localeVersion === versions.localeVersion && dataVersions.statCalcVersion === versions.gameVersion) return
