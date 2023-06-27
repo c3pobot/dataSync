@@ -10,35 +10,31 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     if(!abilitList || !skillList || !lang) return
     const list = {}
     skillList.forEach(s=>{
-      if(lang[abilityList[s.abilityReference].nameKey]){
-        let descKey = abilityList[s.abilityReference].descKey
-        let descKey = abilityList[s.abilityReference].descKey
-        if(abilityList[s.abilityReference]?.tier?.length > 0 && abilityList[s.abilityReference].tier[s.tier.length - 1]) descKey = abilityList[s.abilityReference].tier[s.tier.length - 1].descKey;
-        list[s.id] = {
-          id: s.id,
-          abilityId: abilityList[s.abilityReference].id,
-          maxTier: +(s.tier.length) + 1,
-          nameKey: lang[abilityList[s.abilityReference].nameKey],
-          descKey: lang[descKey] || descKey,
-          omicronMode: s.omicronMode,
-          omicronType: (enumOmicron[s.omicronMode] ? enumOmicron[s.omicronMode].nameKey:''),
-          type: (enumOmicron[s.omicronMode] ? enumOmicron[s.omicronMode].type:'')
+      if(!lang[abilityList[s.abilityReference].nameKey]) return;
+      let descKey = abilityList[s.abilityReference].descKey
+      if(abilityList[s.abilityReference]?.tier?.length > 0 && abilityList[s.abilityReference].tier[s.tier.length - 1]) descKey = abilityList[s.abilityReference].tier[s.tier.length - 1].descKey;
+      list[s.id] = {
+        id: s.id,
+        abilityId: abilityList[s.abilityReference].id,
+        maxTier: +(s.tier.length) + 1,
+        nameKey: lang[abilityList[s.abilityReference].nameKey],
+        descKey: lang[descKey] || descKey,
+        omicronMode: s.omicronMode,
+        omicronType: (enumOmicron[s.omicronMode] ? enumOmicron[s.omicronMode].nameKey:''),
+        type: (enumOmicron[s.omicronMode] ? enumOmicron[s.omicronMode].type:'')
+      }
+      for(let i in s.tier){
+        if(!(list[s.id].zetaTier >= 0) && s.tier[i].isZetaTier){
+          list[s.id].isZeta = true
+          list[s.id].zetaTier = +i + 2;
         }
-        for(let i in s.tier){
-          if(!(list[s.id].zetaTier >= 0) && s.tier[i].isZetaTier){
-            list[s.id].isZeta = true
-            list[s.id].zetaTier = +i + 2;
-          }
-          if(s.tier[i].isOmicronTier){
-            list[s.id].isOmi = true
-            list[s.id].omiTier = +i + 2;
-          }
+        if(s.tier[i].isOmicronTier){
+          list[s.id].isOmi = true
+          list[s.id].omiTier = +i + 2;
         }
       }
     })
-    abilityList = null
-    skillList = null
-    lang = null
+    abilityList = null, skillList = null, lang = null
     return list
   } catch (e) {
     console.error(e)

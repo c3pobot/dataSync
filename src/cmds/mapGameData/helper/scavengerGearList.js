@@ -27,6 +27,7 @@ const getConsumables = async(consumable = [], data = {})=>{
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
+    errored = false
     let setList = await ReadFile('scavengerConversionSet.json', gameVersion)
     let equipmentList = await ReadFile('equipment.json', gameVersion)
     let materialList = await ReadFile('material.json', gameVersion)
