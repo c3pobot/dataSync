@@ -1,10 +1,11 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
+
 let errored = false
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
@@ -51,13 +52,13 @@ const getIngredients = async(ingredients = [], data = {})=>{
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
-    let equipmentList = await ReadFile('material.json', gameVersion)
-    let recipeList = await ReadFile('recipe.json', gameVersion)
-    let statModList = await ReadFile('statMod.json', gameVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
+    let equipmentList = await readFile('material.json', gameVersion)
+    let recipeList = await readFile('recipe.json', gameVersion)
+    let statModList = await readFile('statMod.json', gameVersion)
     if(statModList) statModList = statModList.filter(x=>x.levelTableId)
-    let tableList = await ReadFile('table.json', gameVersion)
-    let xpTableList = await ReadFile('xpTable.json', gameVersion)
+    let tableList = await readFile('table.json', gameVersion)
+    let xpTableList = await readFile('xpTable.json', gameVersion)
 
     if(!lang || !equipmentList || !recipeList || !statModList || !tableList || !xpTableList) return
     let gameData = { equipmentList: equipmentList, lang: lang, recipeList: recipeList }
@@ -83,6 +84,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     lang = null, equipmentList = null, recipeList = null, statModList = null, tableList = null, xpTableList = null
     if(!errored) return true
   }catch(e){
-    console.error(e)
+    reportError(e)
   }
 }

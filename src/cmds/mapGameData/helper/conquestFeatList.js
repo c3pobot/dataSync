@@ -1,25 +1,45 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
+const enumDiff = {I: 8, II: 9, III: 10}
+const getDifficulty = (id)=>{
+  try{
+    let array = id?.split('_')
+    let res
+    for(let i in array){
+      if(enumDiff[array[i]]){
+        res = enumDiff[array[i]]
+        break
+      }
+    }
+    return res
+  }catch(e){
+    console.error(e);
+  }
+}
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    let cqDef = await ReadFile('challenge.json', gameVersion)
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
-    if(!cqDef || !lang) return
-    cqDef = cqDef.filter(x=>x.reward.filter(x=>x.type === 22).length > 0)
-    cqDef.forEach(async(c)=>{
-      const tempObj = {
-        id: c.id,
-        nameKey: (lang[c.nameKey] ? lang[c.nameKey]:c.nameKey),
-        descKey: (lang[c.descKey] ? lang[c.descKey]:c.descKey),
-        reward: +(c.reward.find(x=>x.type == 22) ? c.reward.find(x=>x.type == 22).minQuantity:0),
-        type: c.type,
-        difficulty: (c.id.includes('_III_DIFF') ? 10:(c.id.includes('_II_DIFF') ? 9:8))
+    let challengeList = await readFile('challenge.json', gameVersion)
+    if(challengeList) challengeList = challengeList.filter(x=>+x.type === 5)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
+    if(!challengeList || !lang || challengeList?.length === 0) return
+
+    for(let i in challengeList){
+      let reward = challengeList[i].reward.find(x=>x.type === 22)
+      let difficulty = await getDifficulty(challengeList[i].id)
+      if(!difficulty) continue;
+      let feat = {
+        id: challengeList[i].id,
+        nameKey: lang[challengeList[i].nameKey] || challengeList[i].nameKey,
+        descKey: lang[challengeList[i].descKey] || challengeList[i].descKey,
+        reward: reward?.minQuantity || 0,
+        type: challengeList[i].type,
+        difficulty: difficulty
       }
-      await mongo.set('conquestFeatList', {_id: c.id}, tempObj)
-    })
-    lang = null, cqDef = null
+      await mongo.set('conquestFeatList', {_id: feat.id}, feat)
+    }
+    lang = null, challengeList = null
     return true
   }catch(e){
-    console.error(e)
+    reportError(e)
   }
 }

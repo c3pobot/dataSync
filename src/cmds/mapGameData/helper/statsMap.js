@@ -1,17 +1,17 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
 const staticMap = {UNITSTATMASTERY: {nameKey: 'UNIT_STAT_STAT_VIEW_MASTERY'}}
 let errored = false
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
   }
 }
-const getStatsMap = (enums, lang, keyMap)=>{
+const getStatMap = (enums, lang, keyMap)=>{
   try{
     if(!enums || !lang || !keyMap) return
     let res = {}
@@ -43,17 +43,17 @@ const getKeyMap = (keyMapping = {})=>{
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let keyMapping = await ReadFile('Loc_Key_Mapping.txt.json', localeVersion)
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
-    let enums = await ReadFile('enums.json', gameVersion)
+    let keyMapping = await readFile('Loc_Key_Mapping.txt.json', localeVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
+    let enums = await readFile('enums.json', gameVersion)
     if(!keyMapping || !lang || !enums) return
+    
     let keyMap = await getKeyMap(keyMapping)
-    let statsMap = await getStatsMap(enums['UnitStat'], lang, keyMap)
-    if(statsMap && !errored){
-      await mongo.set('configMaps', {_id: 'statsMap'}, {data: statsMap})
-      return true
-    }
+    let statMap = await getStatMap(enums['UnitStat'], lang, keyMap)
+    if(statMap && !errored) await mongo.set('configMaps', {_id: 'statsMap'}, {data: statMap})
+    keyMapping = null, lang = null, enums = null, keyMap = null, statMap = null
+    if(!errored) return true
   }catch(e){
-    console.error(e);
+    reportError(e);
   }
 }

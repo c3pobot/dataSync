@@ -1,10 +1,10 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
 let errored = false
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
@@ -73,25 +73,27 @@ const getZoneDefinition = async(conflictZoneDefinition = [], lang = {})=>{
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
-    const tbList = await ReadFile('territoryBattleDefinition.json', gameVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
+    let tbList = await readFile('territoryBattleDefinition.json', gameVersion)
     let autocomplete = []
     for(let i in tbList){
       if(errored) continue
-      tbList[i].nameKey = lang[tbList[i].nameKey] || tbList[i].nameKey
-      autocomplete.push({name: tbList[i].nameKey, value: tbList[i].id})
-      let conflictZoneDefinition = await getZoneDefinition(tbList[i].conflictZoneDefinition, lang)
+      let tb = tbList[i]
+      tb.nameKey = lang[tb.nameKey] || tb.nameKey
+      autocomplete.push({name: tb.nameKey, value: tb.id})
+      let conflictZoneDefinition = await getZoneDefinition(tb.conflictZoneDefinition, lang)
       if(conflictZoneDefinition){
-        tbList[i].conflictZoneDefinition = conflictZoneDefinition
-        await mongo.set('tbList', {_id: tbList[i].id}, tbList[i])
+        tb.conflictZoneDefinition = conflictZoneDefinition
+        await mongo.set('tbList', {_id: tb.id}, tb)
       }
     }
     if(!errored && autoComplete?.length > 0){
       await mongo.set('autoComplete', {_id: 'tb-name'}, {data: autocomplete, include: true})
       await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.tb-name': 'tb-name'} )
-      return true
     }
+    lang = null, tbList = null
+    if(!errored) return true
   }catch(e){
-    console.log(e)
+    reportError(e)
   }
 }

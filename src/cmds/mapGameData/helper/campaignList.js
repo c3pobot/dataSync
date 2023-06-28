@@ -1,10 +1,11 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
+
 let errored = false
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
@@ -176,13 +177,13 @@ const getCampainMap = async(campainMap, data = {})=>{
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
-    let campaign = await ReadFile('campaign.json', gameVersion)
-    let actionCap = await ReadFile('dailyActionCap.json', gameVersion)
-    let gear = await ReadFile('equipment.json', gameVersion)
-    let material = await ReadFile('material.json', gameVersion)
-    let mysteryMod = await ReadFile('mysteryStatMod.json', gameVersion)
-    let modSet = await ReadFile('statModSet.json', gameVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
+    let campaign = await readFile('campaign.json', gameVersion)
+    let actionCap = await readFile('dailyActionCap.json', gameVersion)
+    let gear = await readFile('equipment.json', gameVersion)
+    let material = await readFile('material.json', gameVersion)
+    let mysteryMod = await readFile('mysteryStatMod.json', gameVersion)
+    let modSet = await readFile('statModSet.json', gameVersion)
     if(!lang || !campaign || !actionCap || !gear || !material || !mysteryMod || !modSet) return
     let obj = campaign.filter(x=>x.grindEnabled), data = []
     for(let i in obj){
@@ -194,6 +195,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     campaign = null, lang = null, actionCap = null, gear = null, material = null, mysteryMod = null, modSet = null, obj = null
     if(!errored) return true
   }catch(e){
-    console.error(e)
+    reportError(e)
   }
 }

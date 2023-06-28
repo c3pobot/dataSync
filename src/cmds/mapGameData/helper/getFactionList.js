@@ -5,33 +5,29 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try {
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     let categoryList = await ReadFile('category.json', gameVersion)
-    if(!obj || !lang) return
-    const list = {}
+    if(!categoryList || !lang) return
+    let list = {}
     categoryList.forEach(f=>{
-      //if(f.id && !f.id.startsWith('special') && f.descKey && f.uiFilter && f.uiFilter.length > 0 && lang[f.descKey] && lang[f.descKey] != 'Placeholder'){
       if(f.id){
         if(altName[f.id]){
           list[f.id] = {
-            baseId: f.id,
+            id: f.id,
             nameKey: altName[f.id],
-            search: altName[f.id]?.toLowerCase(),
-            uiFilter: false,
+            uiFilter: (f.uiFilter?.length > 0 ? true:false),
             units:[]
           }
         }else{
           list[f.id] = {
-            baseId: f.id,
+            id: f.id,
             nameKey: lang[f.descKey],
-            search: lang[f.descKey]?.toLowerCase(),
             uiFilter: (f.uiFilter?.length > 0 ? true:false),
             units:[]
           }
         }
       }
     })
-    lang = null
-    categoryList = null
-    return list
+    lang = null, categoryList = null
+    if(Object.values(list).length > 0) return list
   } catch (e) {
     console.error(e)
   }

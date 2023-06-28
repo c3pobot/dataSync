@@ -3,7 +3,8 @@ const fs = require('fs')
 const path = require('path')
 const pct = require('./maps/pct')
 const CheckImages = require('./checkImages')
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
+
 const enumType = {
   2: 'alignment',
   3: 'faction',
@@ -13,7 +14,7 @@ let errored = false
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
@@ -31,7 +32,7 @@ const MapAbility = async(ability = [], lang = {})=>{
         }
       }
     })
-    if(Object.values(res)?.length > 0) return res
+    if(!errored && Object.values(res)?.length > 0) return res
   }catch(e){
     setErrorFlag(e)
   }
@@ -49,7 +50,7 @@ const MapFaction = async(faction = [], lang = {})=>{
         }
       }
     })
-    if(Object.values(res)?.length > 0) return res
+    if(!errored && Object.values(res)?.length > 0) return res
   }catch(e){
     setErrorFlag(e)
   }
@@ -72,7 +73,7 @@ const MapUnits = async(units = [], faction = {}, lang = {})=>{
         }
       }
     })
-    if(Object.values(res)?.length > 0) return res
+    if(!errored && Object.values(res)?.length > 0) return res
   }catch(e){
     setErrorFlag(e)
   }
@@ -95,7 +96,7 @@ const MapStatEnum = (enums = {}, lang = {})=>{
         if(tempLang[stat]) res[enums[i]] = {...res[i],...tempLang[stat]}
       }
     }
-    if(Object.value(res)?.length > 0) return res
+    if(!errored && Object.value(res)?.length > 0) return res
   }catch(e){
     setErrorFlag(e)
   }
@@ -179,15 +180,15 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     errored = false
     if(!assetVersion) return
     let crons = {}, images = []
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
-    let abilityList = await ReadFile('ability.json', gameVersion)
-    let affix = await ReadFile('datacronAffixTemplateSet.json', gameVersion)
-    let enums = await ReadFile('enums.json', gameVersion)
-    let factionList = await ReadFile('category.json', gameVersion)
-    let set = await ReadFile('datacronSet.json', gameVersion)
-    let targetSet = await ReadFile('battleTargetingRule.json', gameVersion)
-    let template = await ReadFile('datacronTemplate.json', gameVersion)
-    let unitList = await ReadFile('units.json', gameVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
+    let abilityList = await readFile('ability.json', gameVersion)
+    let affix = await readFile('datacronAffixTemplateSet.json', gameVersion)
+    let enums = await readFile('enums.json', gameVersion)
+    let factionList = await readFile('category.json', gameVersion)
+    let set = await readFile('datacronSet.json', gameVersion)
+    let targetSet = await readFile('battleTargetingRule.json', gameVersion)
+    let template = await readFile('datacronTemplate.json', gameVersion)
+    let unitList = await readFile('units.json', gameVersion)
 
     if(!lang || !abilityList || !affix || !enums || !factionList || !set || !targetSet || !template || !unitList) return
     let ability = await MapAbility(abilityList, lang)
@@ -229,6 +230,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     abilityList = null, lang = null, unitList = null, factionList = null, targetSet = null, enums = null
     if(!errored) return true
   }catch(e){
-    console.error(e);
+    reportError(e);
   }
 }

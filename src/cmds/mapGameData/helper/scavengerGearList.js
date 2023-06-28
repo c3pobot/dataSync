@@ -1,10 +1,10 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
 let errored = false
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
@@ -28,11 +28,12 @@ const getConsumables = async(consumable = [], data = {})=>{
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let setList = await ReadFile('scavengerConversionSet.json', gameVersion)
-    let equipmentList = await ReadFile('equipment.json', gameVersion)
-    let materialList = await ReadFile('material.json', gameVersion)
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
+    let setList = await readFile('scavengerConversionSet.json', gameVersion)
+    let equipmentList = await readFile('equipment.json', gameVersion)
+    let materialList = await readFile('material.json', gameVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
     if(!setList || !lang || !equipmentList || !materialList) return
+    
     let list = [], gameData = { lang: lang, equipmentList: equipmentList, materialList: materialList }
     for(let i in setList){
       let output = materialList.find(x=>x.id === setList[i].output?.item?.id)
@@ -42,8 +43,9 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       tempObj.gear = await getConsumables(setList[i].consumable, gameData)
       if(!errored) await mongo.set('scavengerGearList', {_id: tempObj.id}, tempObj)
     }
+    setList = null, equipmentList = null, materialList = null, lang = null
     if(!errored) return true
   }catch(e){
-    console.error(e);
+    reportError(e);
   }
 }

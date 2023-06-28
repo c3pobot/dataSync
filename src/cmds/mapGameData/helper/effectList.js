@@ -1,7 +1,7 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
 const effectMap = require('./map/effect')
-let langArray, abilityList, effectList, lang, effects, units, missingEffects
+
 let errored = false
 const setErrorFlag = (err)=>{
   try{
@@ -244,16 +244,17 @@ const mapEffects = async(langKey, langIndex, effects = [])=>{
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
     let langArray = Object.keys(lang)
-    let effectList = await ReadFile('effect.json', gameVersion)
-    let abilityList = await ReadFile('ability.json', gameVersion)
+    let effectList = await readFile('effect.json', gameVersion)
+    let abilityList = await readFile('ability.json', gameVersion)
     let units = await mongo.find('units', {}, {portrait: 0, thumbnail: 0})
     let effects = await mongo.find('effectList', {}, {_id: 0, TTL:0})
     let missingEffects = []
     if(!effects) effects = []
     let effectAutoComplete = []
     if(!lang || !langArray || !effectList || !abilityList || !unit || !effects) return
+
     for(let i in lang){
       if(errored) continue
       if(lang[i] && i.startsWith('BattleEffect_')){
@@ -265,8 +266,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
         }
       }
     }
-
-    let tempObj
     let gameData = {abilityList: abilityList, effectList: effectList, langArray: langArray, effects: effects, missingEffects: missingEffects}
     for(let i in units){
       if(errored) continue
@@ -281,7 +280,10 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
           if(effects[i].nameKey && effects[i].units?.length > 0 && effects[i].id && effectAutoComplete.filter(x=>x.name === effects[i].nameKey).length === 0) effectAutoComplete.push({name: effects[i].nameKey, value: effects[i].id})
         }
       }
-      if(effectAutoComplete?.length > 0) await mongo.set('autoComplete', {_id: 'effect'}, {include: true, data: effectAutoComplete})
+      if(effectAutoComplete?.length > 0){
+        await mongo.set('autoComplete', {_id: 'effect'}, {include: true, data: effectAutoComplete})
+        await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.effect': 'effect'} )
+      }
       if(missingEffects?.length > 0){
         for(let i in missingEffects){
           if(missingEffects[i].units?.length > 0) await mongo.set('missingEffects', {_id: missingEffects[i].tag}, missingEffects[i])
@@ -291,6 +293,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     langArray = null, abilityList = null, effectList = null, lang = null, effects = null, units = null, missingEffects = null
     if(!errored) return true
   }catch(e){
-    console.error(e)
+    reportError(e)
   }
 }

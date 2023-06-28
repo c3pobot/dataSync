@@ -1,13 +1,13 @@
 Cmds.'use strict'
 const Cmds = {}
 Cmds.statsMap = require('./statsMap')
-Cmds.factionMap = require('./factionMap')
 Cmds.recipeList = require('./recipeList')
 Cmds.journeyMap = require('./journeyMap')
 Cmds.datacronList = require('./datacronList')
 Cmds.raidList = require('./raidList')
 Cmds.tbList = require('./tbList')
 Cmds.unitList = require('./unitList')
+Cmds.factionList = require('./factionList')
 Cmds.campaignList = require('./campaignList')
 Cmds.conquestFeatList = require('./conquestFeatList')
 Cmds.conquestList = require('./conquestList')

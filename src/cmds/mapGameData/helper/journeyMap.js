@@ -1,5 +1,6 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
+
 const MapUnits = async(units = [], lang = {})=>{
   try{
     let res = {}
@@ -17,12 +18,13 @@ const MapUnits = async(units = [], lang = {})=>{
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    let guideDef = await ReadFile('unitGuideDefinition.json', gameVersion)
-    let unitList = await ReadFile('units.json', gameVersion)
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
+    let guideDef = await readFile('unitGuideDefinition.json', gameVersion)
+    let unitList = await readFile('units.json', gameVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
     if(!guideDef || !lang || !unitList) return
     let units = await MapUnits(unitList, lang)
     if(!units) return
+
     let autoComplete = []
     for(let i in guideDef){
       if(!guideDef[i].unitBaseId || !guideDef[i].titleKey) return
@@ -40,6 +42,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     }
     return true
   }catch(e){
-    console.error(e);
+    reportError(e);
   }
 }

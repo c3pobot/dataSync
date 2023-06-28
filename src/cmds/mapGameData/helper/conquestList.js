@@ -1,10 +1,11 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
+
 let errored = false
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
@@ -83,11 +84,11 @@ const getDiff = async(conquestDifficulty, data = {})=>{
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let cqDef = await ReadFile('conquestDefinition.json', gameVersion)
+    let cqDef = await readFile('conquestDefinition.json', gameVersion)
     if(!cqDef) return
-    for(let x in cqDef){
+    for(let i in cqDef){
       if(errored) continue;
-      let res = cqDef[x]
+      let res = cqDef[i]
       let status = await getDiff(res, {})
       if(status){
         await mongo.set('conquestList', {_id: res.id}, res)
@@ -98,6 +99,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     cqDef = null
     if(!errored) return true
   }catch(e){
-    console.error(e)
+    reportError(e)
   }
 }

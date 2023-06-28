@@ -1,10 +1,9 @@
 'use strict'
-const ReadFile = require('./readFile')
-const GetRecipeList = require('./getRecipeList')
+const { readFile, reportError, getRecipeList } = require('./helper')
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try {
-    let equipmentList = await ReadFile('equipment.json', gameVersion)
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
+    let equipmentList = await readFile('equipment.json', gameVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
     let recipeList = await GetRecipeList(gameVersion, localeVersion, assetVersion)
     if(!equipmentList || !lang || !recipeList) return
     equipmentList.forEach(x=>{
@@ -23,6 +22,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     equipmentList = null, lang = null, recipeList = null
     return true
   } catch (e) {
-    console.error(e);
+    reportError(e);
   }
 }

@@ -1,5 +1,6 @@
 'use strict'
 const ReadFile = require('./readFile')
+const getSkillMap = require('./getSkillMap')
 const enumDamageType = { MAX_HEALTH: 1, ATTACK_DAMAGE: 6, ABILITY_POWER: 7 }
 let errored = false
 const setErrorFlag = (err)=>{
@@ -9,38 +10,6 @@ const setErrorFlag = (err)=>{
   }catch(e){
     errored = true
     console.error(e);
-  }
-}
-const getAbilityMap = async(abilityList = [], lang = {})=>{
-  try{
-    let list = {}
-    abilityList.forEach(a=>{
-      if(!lang[a.nameKey]) return
-      list[a.id] = {
-        abilityId: a.id,
-        nameKey: lang[a.nameKey],
-        descKey: lang[a.descKey],
-        isZeta: false,
-        isOmi: false,
-        tier: a.tier
-      }
-      if(a.tier?.filter(x=>x.isZetaTier).length > 0) list[a.id].isZeta = true
-      if(a.tier?.filter(x=>x.isOmicronTier).length > 0) list[a.id].isOmi = true
-    })
-    if(!errored) return list
-  }catch(e){
-    setErrorFlag(e)
-  }
-}
-const getSkillMap = async(skillList = [], abilityMap = {})=>{
-  try{
-    let list = {}
-    skillList.forEach(s=>{
-      list[s.id] = JSON.parse(JSON.stringify(abilityMap[s.abilityReference]))
-    })
-    if(!errored) return list
-  }catch(e){
-    setErrorFlag(e)
   }
 }
 const getDamageType = (param = [])=>{
@@ -94,6 +63,7 @@ const getSkill = async(skillReference = [], data = {})=>{
       if(!skillMap[skillReference[i].skillId]) continue;
       res[skillReference[i].skillId] = skillMap[skillReference[i].skillId]
       let abilityDamage = await getAbillityDamage(skillReference[i].tier, data)
+      if(abilityDamage) res[skillReference[i].skillId].abilityDamage = abilityDamage
     }
     if(!errored) return Object.values(res)
   }catch(e){
@@ -113,27 +83,36 @@ const getCrewSkill = async(crew = [], data = {})=>{
     setErrorFlag(e)
   }
 }
+const getUltimate = async(limitBreakRef = [], data = {})=>{
+  try{
+    let res = {}
+    for(let i in limitBreakRef){
+      let ability = data.abilityList.find(x=>x.id === limitBreakRef[i].abilityId)
+      if(!ability || !data.lang[ability?.nameKey]) continue
+      res[ability.id] = {id: ability.id, nameKey: data.lang[ability.nameKey]}
+    }
+    if(!errored) return Object.values(res)
+  }catch(e){
+    setErrorFlag(e);
+  }
+}
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
     let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
     let abilityList = ReadFile('ability.json', gameVersion)
-    if(!lang || abilityList) return
-    let abilityMap = await getAbilityMap(abilityList, lang)
     let skillList = await ReadFile('skill.json', gameVersion)
-    if(!abilityMap || !skillList) return
-    let skillMap = await getSkillMap(skillList, abilityMap)
+    let skillMap = await getSkillMap(skillList, abilityList, lang, true, true)
+    if(!lang || abilityList || !skillList || !skillMap) return
     let unitList = await ReadFile('units.json', gameVersion)
     let effectList = await ReadFile('effect.json', gameVersion)
-
-    if(!skillMap || !unitList || !effectList) return
-    let units = unitList.filter(x=>+x.rarity === 7 && x.obtainable === true && +x.obtainableTime === 0)
-    if(!units || errored || units?.length === 0) return
+    let units = unitList?.filter(x=>+x.rarity === 7 && x.obtainable === true && +x.obtainableTime === 0)
+    if(!unitList || !effectList || !units || units?.length === 0) return
     let gameData = { lang: lang, abilityList: abilityList, skillMap: skillMap, effectList: effectList }
     for(let i in units){
       if(errored) continue
       let unit = { baseId: units[i].baseId, skill: [], ultimate: [] }
-      let ultimate = await getSkill(units[i].limitBreakRef?.filter(x=>x.powerAdditiveTag === 'ultimate'), gameData)
+      let ultimate = await getUltimate(units[i].limitBreakRef?.filter(x=>x.powerAdditiveTag === 'ultimate'), gameData)
       if(ultimate) unit.ultimate = ultimate
       let skill = await getSkill(unit[i].skillReference, data)
       if(skill?.length > 0) unit.skill = unit.skill.concat(skill)

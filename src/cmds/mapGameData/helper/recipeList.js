@@ -1,10 +1,10 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
 let errored = false, tierEmum
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
@@ -45,11 +45,12 @@ createTierEnum()
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
-    let recipeList = await ReadFile('recipe.json')
-    let materialList = await ReadFile('material.json')
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
+    let recipeList = await readFile('recipe.json')
+    let materialList = await readFile('material.json')
     let relicList = recipeList?.filter(x=>x.id.startsWith('relic_'))
     if(!lang || !recipeList || !materialList || !relicList || relicList?.length === 0) return
+
     let gameData = {materialList: materialList, relicList: relicList, lang: lang}
     for(let i in relicList){
       if(!tierEmum[relicList[i].id]) continue
@@ -65,6 +66,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     }
     if(!errored) return true
   }catch(e){
-    console.error(e);
+    reportError(e);
   }
 }

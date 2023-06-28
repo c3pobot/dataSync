@@ -1,6 +1,7 @@
 'use strict'
-const ReadFile = require('./readFile')
+const { readFile, reportError } = require('./helper')
 const CheckImages = require('./checkImages')
+
 const raidTokens = {
   RAID_REWARD_CURRENCY_01: { nameKey: 'Shared_Currency_RaidReward_01', icon: 'tex.guild_raid_personal' },
   RAID_REWARD_CURRENCY_02: { nameKey: 'Shared_Currency_RaidReward_02', icon: 'tex.guild_raid_general' },
@@ -11,111 +12,138 @@ let errored = false
 const setErrorFlag = (err)=>{
   try{
     errored = true
-    console.error(err)
+    reportError(err)
   }catch(e){
     errored = true
     console.error(e);
   }
 }
-const getRewards = async(preview, lang = {}, rewardList = [], images = [])=>{
+const getLoot = (previewItem = [], data = {})=>{
   try{
-    if(!preview) return
-    let res = {rankStart: preview.rankStart, rankEnd: preview.rankEnd, loot: []}
-    res = {...res,...preview.primaryReward[0]}
-    let reward = rewardList.find(x=>x.id === res.id)
-    if(reward){
-      res.texture = reward.texture
-      res.nameKey = lang[reward.iconTextKey] || reward.iconTextKey
-      for(let i in reward.previewItem){
-        if(raidTokens[reward.previewItem[i].id]){
-          let loot = {...raidTokens[reward.previewItem[i].id],...{
-            qty: reward.previewItem[i].minQuantity,
-            type: reward.previewItem[i].type
-          }}
-          loot.nameKey = lang[loot.nameKey] || loot.nameKey
-          res.loot.push(loot)
-          if(loot.icon) images.push(loot.icon)
-        }
-      }
+    if(!previewItem.length === 0) return
+    let res = []
+    for(let i in previewItem){
+      if(!raidTokens[previewItem[i].id] || errored) continue;
+      let loot = JSON.parse(JSON.stringify(raidTokens[previewItem[i].id]))
+      if(data.lang[loot.nameKey]) loot.nameKey = data.lang[res.nameKey]
+      loot.qty = previewItem[i].minQuantity
+      loot.type = previewItem[i].type
+      data.images.push(loot.icon)
+      res.push(loot)
     }
-    if(!errored) return res
+    if(!errored && res.length > 0) return res
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+const getRewards = async(rankRewardPreview = [], data = {})=>{
+  try{
+    if(rankRewardPreview.length === 0) return
+    let res = []
+    for(let i in rankRewardPreview){
+      if(errored) continue;
+      let reward = JSON.parse(JSON.stringify(rankRewardPreview[i].primaryReward[0]))
+      reward.rankStart = rankRewardPreview.rankStart
+      reward.rankEnd = rankRewardPreview.rankEnd
+      reward.loot = []
+      let rewardDef = data.rewardList.find(x=>x.id === reward.id)
+      if(!rewardDef) continue
+      reward.texture = rewardDef.texture
+      reward.nameKey = data.lang[rewardDef.iconTextKey] || rewardDef.iconTextKey
+      let loot = await getLoot(rewardDef.previewItem)
+      if(loot) reward.loot = loot
+      res.push(reward)
+    }
+    if(!errored && res.length > 0) return res
   }catch(e){
     setErrorFlag(e);
   }
 }
-const getRaid = async(raid, data = {})=>{
+const getRequirements = (entryCategoryAllowed, data = {})=>{
   try{
-    let campaign = data.campaignNode?.find(x=>x.id === raid?.campaignElementIdentifier?.campaignNodeId)
-    let campaignMission = campaign?.campaignNodeMission
-    raid.nameKey = lang[campaign.nameKey] || campaign.nameKey
-    raid.mission = []
+    if(!entryCategoryAllowed) return
+    let res = {
+      faction: entryCategoryAllowed.categoryId,
+      rarity: entryCategoryAllowed.minimumUnitRarity || 0,
+      gear: entryCategoryAllowed.minimumUnitTier || 0,
+      relic: entryCategoryAllowed.minimumRelicTier || 0
+    }
+    if(!errored) return res
   }catch(e){
-    setErrorFlag(e);
+    setErrorFlag(e)
+  }
+}
+const getMission = async(campaignNodeMission, data = {})=>{
+  try{
+    if(!campaignNodeMission) return
+    let res = {
+      id: campaignNodeMission.id,
+      nameKey: data.lang[campaignNodeMission.nameKey] || campaignNodeMission.nameKey,
+      nameKey: data.lang[campaignNodeMission.descKey] || campaignNodeMission.descKey,
+      combatType: campaignNodeMission.combatType,
+      rewards:[]
+    }
+    let requirements = await getRequirements(campaignNodeMission.entryCategoryAllowed)
+    if(requirements) res.requirements = requirements
+    let rewards = await getRewards(campaignNodeMission.rankRewardPreview, data)
+    if(rewards) res.rewards = rewards
+    if(!errored) return res
+  }catch(e){
+    setErrorFlag(e)
+  }
+}
+const getMissions = async(campaignNodeMission = [], data = {})=>{
+  try{
+    if(campaignNodeMission.length === 0) return
+    let res = []
+    for(let i in campaignNodeMission){
+      if(errored) continue;
+      let mission = await getMission(campaignNodeMission[i], data)
+      if(mission) res.push(mission)
+    }
+    if(!errored && res.length > 0) return res
+  }catch(e){
+    setErrorFlag(e)
   }
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     errored = false
-    let lang = await ReadFile('Loc_ENG_US.txt.json', localeVersion)
-    let campainList = await ReadFile('campaign.json', gameVersion)
-    let guildRaidList = await ReadFile('guildRaid.json', gameVersion)
-    let rewardList = await ReadFile('mysteryBox.json', gameVersion)
+    let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
+    let campainList = await readFile('campaign.json', gameVersion)
+    let guildRaidList = await readFile('guildRaid.json', gameVersion)
+    let rewardList = await readFile('mysteryBox.json', gameVersion)
     if(!lang || !campainList || !rewardList) return
     let guildCampaign = campainList.find(x=>x.id === 'GUILD')
     let campaignNode = guildCampaign.campaignMap?.find(x=>x.id === 'RAIDS')?.campaignNodeDifficultyGroup[0]?.campaignNode
     if(!campaignNode || !guildCampaign) return
 
-    let images = [], autoComplete = []
-    let gameData = { lang: lang, campaignNode: campaignNode, rewardList: rewardList }
+    let autoComplete = [],  gameData = { lang: lang, campaignNode: campaignNode, rewardList: rewardList, images: [], autoComplete: [] }
     for(let i in guildRaidList){
-      const raid = JSON.parse(JSON.stringify(guildRaidList[i]))
-
-      let campaign = campaignNode?.find(x=>x.id === raid?.campaignElementIdentifier?.campaignNodeId)
-      let campaignMission = campaign?.campaignNodeMission
+      if(errored) continue;
+      let campaign = data.campaignNode?.find(x=>x.id === guildRaidList[i]?.campaignElementIdentifier?.campaignNodeId)
+      if(!campaign) continue;
+      let raid = JSON.parse(JSON.stringify(guildRaidList[i]))
       raid.nameKey = lang[campaign.nameKey] || campaign.nameKey
       raid.mission = []
-      if(raid.image) images.push(raid.image)
-      if(raid.portraitIcon) images.push(raid.portraitIcon)
-      if(raid.infoImage) images.push(raid.infoImage)
-      for(let c in campaignMission){
-        let mission = {
-          id: campaignMission[c].id,
-          nameKey: lang[campaignMission[c].nameKey] || campaignMission[c].nameKey,
-          nameKey: lang[campaignMission[c].descKey] || campaignMission[c].descKey,
-          combatType: campaignMission[c].combatType,
-          rewards:[]
-         }
-         if(campaignMission[c].entryCategoryAllowed){
-           mission.requirements = {
-             faction: campaignMission[c].entryCategoryAllowed.categoryId,
-             rarity: campaignMission[c].entryCategoryAllowed.minimumUnitRarity || 0,
-             gear: campaignMission[c].entryCategoryAllowed.minimumUnitTier || 0,
-             relic: campaignMission[c].entryCategoryAllowed.minimumRelicTier || 0,
-           }
-         }
-         if(campaignMission[c]?.rankRewardPreview?.length > 0){
-           for(let r in campaignMission[c]?.rankRewardPreview){
-             let reward = await getRewards(campaignMission[c]?.rankRewardPreview[r], lang, rewardList, images)
-             if(reward) mission.rewards.push(reward)
-             if(reward?.texture) images.push(reward.texture)
-           }
-         }
-         raid.mission.push(mission)
+      if(raid.image) gameData.images?.push(raid.image)
+      if(raid.portraitIcon) gameData.images?.push(raid.portraitIcon)
+      if(raid.infoImage) gameData.images?.push(raid.infoImage)
+      let missions = await getMissions(campaign.campaignNodeMission, gameData)
+      if(!errored && missions?.length > 0) raid.mission = missions
+      if(!errored && raid.mission.length > 0){
+        autoComplete.push({name: raid.nameKey, value: raid.id})
+        await mongo.set('raidList', {_id: raid.id}, raid)
       }
-      await mongo.set('raidList', {_id: guildRaidList[i].id}, raid)
-      if(raid?.nameKey && raid?.id) autoComplete.push({name: raid.nameKey, value: raid.id})
     }
-    if(images.length > 0 && assetVersion) CheckImages(images, assetVersion, 'thumbnail')
-    if(autoComplete?.length > 0) mongo.set('autoComplete', {_id: 'raid'}, {data: autoComplete, include: true})
-    errObj.complete++
-    guildRaidList = null
-    campainList = null
-    rewardList = null
-    lang = null
-    guildCampaign = null
-    campaignNode = null
+    if(!errored && gameData.images?.length > 0 && assetVersion) CheckImages(gameData.images, assetVersion, 'thumbnail')
+    if(!errored && autoComplete?.length > 0){
+      await mongo.set('autoComplete', {_id: 'raid'}, {data: autoComplete, include: true})
+      await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.raid': 'raid'})
+    }
+    guildRaidList = null, campainList = null, rewardList = null, lang = null, guildCampaign = null, campaignNode = null
+    if(!errored && autoComplete?.length > 0) return true
   }catch(e){
-    console.error(e);
-    errObj.error++
+    reportError(e);
   }
 }
