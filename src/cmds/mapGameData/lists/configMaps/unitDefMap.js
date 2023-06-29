@@ -1,5 +1,5 @@
 'use strict'
-const { getSkillMap, readFile, getOffenseStatId, getSkill, getCrewSkill, getUltimate } = require(baseDir+'/src/cmds/mapGameData/lists/helper')
+const { getSkillMap, readFile, getOffenseStatId, getSkill, getCrewSkill, getUltimate } = require('../helper')
 module.exports = async(gameVersion, localeVersion)=>{
   try{
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
@@ -38,7 +38,8 @@ module.exports = async(gameVersion, localeVersion)=>{
       if(ultimate) unit.ultimate = ultimate
       data[unit.baseId] = unit
     }
-    return data
+    await mongo.set('configMaps', {_id: 'unitDefMap'}, {version: gameVersion, data: data})
+    return true
   }catch(e){
     throw(e)
   }

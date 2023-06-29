@@ -1,5 +1,5 @@
 'use strict'
-const { readFile } = require(baseDir+'/src/cmds/mapGameData/lists/helper')
+const { readFile } = require('../helper')
 module.exports = async(gameVersion, localeVersion)=>{
   try{
     let statModList = await readFile('statMod.json', gameVersion)
@@ -12,7 +12,8 @@ module.exports = async(gameVersion, localeVersion)=>{
         setId: +statModList[i].setId
       }
     }
-    return data
+    await mongo.set('configMaps', {_id: 'modDefMap'}, {version: gameVersion, data: data})
+    return true
   }catch(e){
     throw(e)
   }

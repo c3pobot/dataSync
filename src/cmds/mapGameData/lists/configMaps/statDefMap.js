@@ -9,7 +9,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
 
     let statMap = await getStatMap(enums['UnitStat'], lang, keyMapping)
     if(statMap){
-      await mongo.set('configMaps', {_id: 'statMap'}, {version: gameVersion, data: statMap})
+      await mongo.set('configMaps', {_id: 'statDefMap'}, {version: gameVersion, data: statMap})
       return true
     }
   }catch(e){

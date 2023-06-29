@@ -1,7 +1,9 @@
 'use strict'
 const Cmds = {}
-Cmds.statMap = require('./statMap')
+Cmds.statDefMap = require('./statDefMap')
 Cmds.journeyMap = require('./journeyMap')
+Cmds.modDefMap = require('./modDefMap')
+Cmds.unitDefMap = require('./unitDefMap')
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     for(let i in Cmds){
