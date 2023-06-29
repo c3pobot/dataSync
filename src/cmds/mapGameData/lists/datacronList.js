@@ -22,7 +22,6 @@ const getAbilityMap = async(abilityList = [], lang = {})=>{
         iconKey: abilityList[i].icon
       }
     }
-    fs.writeFileSync('./abilityMap.json', JSON.stringify(res, null, 2))
     if(!errored && Object.values(res)?.length > 0) return res
   }catch(e){
     throw(e)
@@ -183,7 +182,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       }
       if(!errored) await mongo.set('datacronList', {_id: cron.id}, cron)
     }
-    if(!errored && gameData.images?.length > 0) CheckImages(gameData.images, assetVersion, 'thumbnail')
+    if(!errored && gameData.images?.length > 0) CheckImages(gameData.images, assetVersion, 'thumbnail', 'datacronList')
     lang = null, abilityList = null, datacronAffixTemplateSet = null, enums = null, categoryList = null, datacronSetList = null
     battleTargetingRuleList = null, datacronTemplate = null, unitList = null
     if(!errored) return true

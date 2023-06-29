@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "mongowrapper": "github:c3pobot/mongowrapper",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "uuid": "^9.0.0"
   }
 }

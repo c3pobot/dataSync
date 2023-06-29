@@ -36,8 +36,8 @@ createTierEnum()
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
-    let recipeList = await readFile('recipe.json')
-    let materialList = await readFile('material.json')
+    let recipeList = await readFile('recipe.json', gameVersion)
+    let materialList = await readFile('material.json', gameVersion)
     let relicList = recipeList?.filter(x=>x.id.startsWith('relic_'))
     if(!lang || !recipeList || !materialList || !relicList || relicList?.length === 0) return
 

@@ -1,8 +1,7 @@
-Cmds.'use strict'
+'use strict'
 const Cmds = {}
-Cmds.statMap = require('./statMap')
+Cmds.configMaps = require('./configMaps')
 Cmds.relicRecipeList = require('./relicRecipeList')
-Cmds.journeyMap = require('./journeyMap')
 Cmds.datacronList = require('./datacronList')
 Cmds.raidList = require('./raidList')
 Cmds.tbList = require('./tbList')

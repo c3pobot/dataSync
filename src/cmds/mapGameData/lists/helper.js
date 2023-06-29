@@ -21,9 +21,10 @@ const reportError = (err, lines = 3)=>{
 }
 const readFile = (file, version)=>{
   try{
-    if(!file || !version) return
-    const obj = fs.readFileSync(path.join(DATA_PATH, file))
-    if(obj?.data && obj?.version && obj?.version === version) return JSON.parse(obj.data)
+    if(!file || !version) throw('readFile info not provided '+file+' '+version)
+    let obj = fs.readFileSync(path.join(DATA_PATH, file))
+    if(obj) obj = JSON.parse(obj)
+    if(obj?.data && obj?.version && obj?.version === version) return obj.data
   }catch(e){
     console.error(e);
   }
@@ -223,20 +224,20 @@ const getStatMap = (enums = {}, lang = {}, keyMapping = {})=>{
       if(!nameKey) nameKey = i
       res[enums[i]] = { statId: enums[i], pct: pct[enums[i]], enum: i, nameKey: nameKey,  }
     }
-    fs.writeFileSync('./statMap.json', JSON.stringify(res, null, 2))
-    if(!errored && Object.values(res)?.length > 0) return res
+    if(Object.values(res)?.length > 0) return res
   }catch(e){
     throw(e)
   }
 }
 const checkUnitImages = async(images = [], assetVersion)=>{
   try{
-    await CheckImages(images, assetVersion, 'thumbnail')
-    await CheckImages(images, assetVersion, 'portrait')
+    await CheckImages(images, assetVersion, 'thumbnail', 'unitList-thumbnail')
+    await CheckImages(images, assetVersion, 'portrait', 'unitList-portrait')
   }catch(e){
     console.error(e);
   }
 }
+
 module.exports = {
   reportError: reportError,
   readFile: readFile,
@@ -246,5 +247,6 @@ module.exports = {
   getCrewSkill: getCrewSkill,
   getOffenseStatId: getOffenseStatId,
   getUltimate: getUltimate,
-  getStatMap: getStatMap
+  getStatMap: getStatMap,
+  checkUnitImages: checkUnitImages
 }

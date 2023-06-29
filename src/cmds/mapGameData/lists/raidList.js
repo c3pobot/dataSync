@@ -127,7 +127,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
         await mongo.set('raidList', {_id: raid.id}, raid)
       }
     }
-    if(!errored && gameData.images?.length > 0 && assetVersion) CheckImages(gameData.images, assetVersion, 'thumbnail')
+    if(!errored && gameData.images?.length > 0 && assetVersion) CheckImages(gameData.images, assetVersion, 'thumbnail', 'raidList')
     if(!errored && autoComplete?.length > 0){
       await mongo.set('autoComplete', {_id: 'raid'}, {data: autoComplete, include: true})
       await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.raid': 'raid'})

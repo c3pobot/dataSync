@@ -5,8 +5,8 @@ const getGameVersions = require('./getGameVersions')
 const SYNC_INTERVAL = +(process.env.SYNC_INTERVAL || 1)
 
 const { checkVersions } = require('./cmds')
-
 global.updateInProgress = false
+global.initialCheck = true
 global.mongo = new MongoWrapper({
   url: 'mongodb://'+process.env.MONGO_USER+':'+process.env.MONGO_PASS+'@'+process.env.MONGO_HOST+'/',
   authDb: process.env.MONGO_AUTH_DB,
@@ -22,6 +22,7 @@ const CheckMongo = async()=>{
   const status = await mongo.init();
   if(status > 0){
     console.log('Mongo connection successful...')
+    mongoReady = true
     CheckAPIReady()
   }else{
     console.error('Mongo connection error. Will try again in 10 seconds')

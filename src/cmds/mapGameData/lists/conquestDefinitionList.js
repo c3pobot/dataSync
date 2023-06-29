@@ -95,7 +95,10 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       }
     }
     conquestDefinition = null
-    if(!errored) return true
+    if(!errored){
+      await mongo.set('versions', {_id: 'conquestDefinitionList'}, {gameVersion: gameVersion, localeVersion: localeVersion, assetVersion: assetVersion})
+      return true
+    }
   }catch(e){
     throw(e)
   }

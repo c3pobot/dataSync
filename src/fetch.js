@@ -1,13 +1,26 @@
 'use strict'
 const fetch = require('node-fetch')
-const convert2base64 = (img)=>{
+const convert2base64 = async(res)=>{
   try{
-    if(!img) return
-    let res = Buffer.from(img)
-    if(res) res = res.toString('base64')
-    return res
+    if(res?.status?.toString().startsWith(2)){
+      let img = await res.arrayBuffer()
+      img = Buffer.from(img)
+      if(img) return img.toString('base64')
+    }
   }catch(e){
     console.error(e);
+  }
+}
+const getJsonResponse = async(res)=>{
+  try{
+    let body
+    if (res?.status?.toString().startsWith('2')){
+      body = await res?.json()
+      if(!body) body = res?.status
+    }
+    return body
+  }catch(e){
+    throw(e)
   }
 }
 module.exports.json = async(uri, method = 'GET', body, headers)=>{
@@ -16,22 +29,20 @@ module.exports.json = async(uri, method = 'GET', body, headers)=>{
     if(body) payload.body = JSON.stringify(body)
     if(headers) payload.headers = headers
     const obj = await fetch(uri, payload)
-    return await obj?.json()
+    return await getJsonResponse(obj)
   }catch(e){
-    console.error(e);
+    throw(e);
   }
 }
 module.exports.image = async(uri)=>{
   try{
-    let img
     const obj = await fetch(uri, {
       method: 'GET',
       compress: true,
       timeout: 60000
     })
-    if(obj) img = await obj?.arrayBuffer()
-    if(img) return await convert2base64(img)
+    return await convert2base64(obj)
   }catch(e){
-    console.error(e);
+    throw(e);
   }
 }

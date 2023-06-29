@@ -1,14 +1,13 @@
 'use strict'
 const path = require('path')
 const fs = require('fs')
-const SaveFile = requir('./saveFile')
+const SaveFile = require('./saveFile')
 const getDataVersions = require('./getDataVersions')
-const dataUrl = process.env.GITHUB_DATA_URI || 'https://raw.githubusercontent.com/swgoh-utils/gamedata/main'
 
-module.exports = async(gameVersion, localeVersion, forceFile = false)=>{
+module.exports = async(gameVersion, localeVersion, assetVersion, forceFile = false)=>{
   try{
     let count = 0, totalCount = 0
-    const versions = await getDataVersions(gameVersion, localeVersion)
+    let versions = await getDataVersions(gameVersion, localeVersion, assetVersion)
     if(!versions){
       console.log('github files not updated yet...')
       return
@@ -18,7 +17,7 @@ module.exports = async(gameVersion, localeVersion, forceFile = false)=>{
     count++;
     for(let i in versions){
       if(versions[i] === gameVersion && i !== 'gameVersion'){
-        const status = await SaveFile(i, gameVersion, newFiles, forceFile)
+        const status = await SaveFile(i, gameVersion, forceFile)
         if(status === true) count++;
       }
     }

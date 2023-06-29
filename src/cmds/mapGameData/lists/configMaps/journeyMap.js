@@ -1,5 +1,5 @@
 'use strict'
-const { readFile } = require('./helper')
+const { readFile } = require('../helper')
 
 const getUnitMap = async(unitList = [], lang = {})=>{
   try{
@@ -29,7 +29,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     let manualGuides = (await mongo.find('botSettings', {_id: 'manualGuides'}))[0]
     if(manualGuides?.length > 0){
       for(let i in manualGuides){
-        if(autoComplete.filter(x=>x.name === manualGuides[i].name).length === 0) autoComplete.push(manualGuides[i])
+        if(autoComplete.filter(x=>x.value === manualGuides[i].value).length === 0) autoComplete.push(manualGuides[i])
       }
     }
     if(autoComplete?.length > 0){

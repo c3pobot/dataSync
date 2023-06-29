@@ -1,6 +1,6 @@
 'use strict'
 const path = require('path')
-const Fetch = require('../fetch')
+const Fetch = require('./fetch')
 const GAME_API_URI = process.env.CLIENT_URL
 module.exports = async()=>{
   try{

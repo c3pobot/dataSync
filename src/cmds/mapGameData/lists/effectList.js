@@ -1,6 +1,6 @@
 'use strict'
 const { readFile, getSkillMap } = require('./helper')
-const effectMap = require('./map/effect')
+const effectMap = require('./maps/effect')
 
 let errored = false
 const cleanEffectName = (string)=>{
@@ -243,11 +243,9 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     let abilityList = await readFile('ability.json', gameVersion)
     let skillList = await readFile('skill.json', gameVersion)
     let skillMap = await getSkillMap(skillList, abilityList, lang)
-    fs.writeFileSync('./skillMap.json', JSON.stringify(skillMap, null, 2))
     let unitList = await readFile('units.json', gameVersion)
     if(unitList) unitList = unitList.filter(x=>+x.rarity === 7 && x.obtainable === true && +x.obtainableTime === 0)
     let unitMap = await getUnitMap(unitList, skillMap, lang)
-    fs.writeFileSync('./unitMap.json', JSON.stringify(unitMap, null, 2))
     let effects = await mongo.find('effectList', {}, {_id: 0, TTL:0})
     let missingEffects = []
     if(!effects) effects = []
@@ -285,7 +283,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       }
       if(missingEffects?.length > 0){
         for(let i in missingEffects){
-          if(missingEffects[i].units?.length > 0) mongo.set('missingEffects', {_id: 'missing/'+missingEffects[i].tag}, missingEffects[i])
+          if(missingEffects[i].units?.length > 0) mongo.set('missingEffects', {_id: missingEffects[i].tag}, missingEffects[i])
         }
       }
     }
