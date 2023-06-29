@@ -9,7 +9,10 @@ module.exports = async(gameVersion, localeVersion, forceFile = false)=>{
   try{
     let count = 0, totalCount = 0
     const versions = await getDataVersions(gameVersion, localeVersion)
-    if(!versions) return
+    if(!versions){
+      console.log('github files not updated yet...')
+      return
+    }
     if(versions) totalCount = Object.values(versions)?.filter(x=>x === gameVersion)?.length
     if(+totalCount === 0) return false
     count++;
@@ -20,8 +23,9 @@ module.exports = async(gameVersion, localeVersion, forceFile = false)=>{
       }
     }
     if(count !== +totalCount) return false
-    return await SaveFile('Loc_ENG_US.txt.json', localeVersion, forceFile)
+    let status = await SaveFile('Loc_ENG_US.txt.json', localeVersion, forceFile)
+    if(status === true) return await SaveFile('Loc_Key_Mapping.txt.json', localeVersion, forceFile)
   }catch(e){
-    console.error(e);
+    throw(e);
   }
 }

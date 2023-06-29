@@ -16,6 +16,6 @@ module.exports = async(gameVersion, localeVersion)=>{
     let updatedCount = +array.filter(x=>x === gameVersion || x === localeVersion).length
     if(totalCount === updatedCount) return versions
   }catch(e){
-    console.error(e);
+    throw(e);
   }
 }

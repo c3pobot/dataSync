@@ -16,13 +16,6 @@ const FetchImage = async(thumbnailName, version)=>{
     console.error(e);
   }
 }
-const SaveFile = async(dir, fileName, data, encoding = 'base64')=>{
-  try{
-    return await fs.writeFileSync(path.join(PUBLIC_DIR, dir, fileName), data, {encoding: encoding})
-  }catch(e){
-    console.error(e);
-  }
-}
 const uploadFile = async(fileName, file)=>{
   try{
     if(!S3_API_URI || !S3_BUCKET || fileName || file) return
@@ -38,7 +31,6 @@ module.exports = async(version, thumbnailName, dir)=>{
     let img = await FetchImage(thumbnailName, version)
     if(!img) return
     let status = await uploadFile(path.join(dir, thumbnailName+'.png'), img)
-    console.log(status)
   }catch(e){
     console.error(e);
   }

@@ -1,20 +1,9 @@
 'use strict'
-const { getSkillMap, readFile, getOffenseStatId, getSkill, getCrewSkill, getUltimate, reportError } = require('./helper')
+const { getSkillMap, readFile, getOffenseStatId, getSkill, getCrewSkill, getUltimate, checkUnitImages } = require('./helper')
 const nameKeyPayload = {include: false, 'data.unit': 'unit', 'data.unit1': 'unit', 'data.unit2': 'unit', 'data.leader': 'unit', 'data.character': 'character', 'data.ship': 'ship'}
 
-let errored = false
-const setErrorFlag = (err)=>{
-  try{
-    errored = true
-    reportError(err)
-  }catch(e){
-    errored = true
-    console.error(e);
-  }
-}
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    errored = false
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
     let abilityList = await readFile('ability.json', gameVersion)
     let skillList = await readFile('skill.json', gameVersion)
@@ -26,12 +15,12 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
 
     if(!lang || !abilityList || !skillMap || !effectList || !units || units?.length === 0) return
 
-    let autoComplete = [], unitMap = {}, gameData = { lang: lang, abilityList: abilityList, effectList: effectList, skillMap: skillMap  }
+    let autoComplete = [], unitMap = {}, images=[], gameData = { lang: lang, abilityList: abilityList, effectList: effectList, skillMap: skillMap  }
 
     for(let i in units){
-      if(errored) continue
       let u = units[i]
       if(!lang[u.nameKey]) continue
+      if(images.filter(x=>x === u.thumbnailName).length === 0) images.push(u.thumbnailName)
       let alignment = u.categoryId.find(x=>x.startsWith('alignment_'))
       autoComplete.push({name: lang[u.nameKey], value: u.baseId, combatType: u.combatType})
       unitMap[u.baseId] = { baseId: u.baseId, nameKey: lang[u.nameKey], combatType: u.combatType, isGl: u.legend, alignment: alignment, icon: u.thumbnailName }
@@ -58,9 +47,12 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       if(crewSkill) unit.skill = { ...unit.skill, ...crewSkill }
       let ultimate = await getUltimate(u.limitBreakRef.filter(x=>x.powerAdditiveTag === 'ultimate'), gameData)
       if(ultimate) unit.ultimate = ultimate
-      if(!errored) await mongo.set('unitList', {_id: unit.baseId}, unit)
+      await mongo.set('unitList', {_id: unit.baseId}, unit)
     }
-    if(!errored && autoComplete.length > 0 && Object.values(unitMap)?.length > 0){
+    if(images?.length > 0){
+      checkUnitImages(images, assetVersion)
+    }
+    if(autoComplete.length > 0 && Object.values(unitMap)?.length > 0){
       await mongo.set('configMaps', {_id: 'unitMap'}, {data: unitMap})
       await mongo.set('autoComplete', {_id: 'unit'}, {data: autoComplete, include: true})
       await mongo.set('autoComplete', {_id: 'character'}, {data: autoComplete.filter(x=>x.combatType === 1), include: true})
@@ -68,8 +60,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       await mongo.set('autoComplete', {_id: 'nameKeys'}, nameKeyPayload)
     }
     lang = null, abilityList = null, skillList = null, skillMap = null, unitList = null, effectList = null, units = null
-    if(!errored) return true
+    if(autoComplete.length > 0) return true
   }catch(e){
-    reportError(e);
+    throw(e);
   }
 }

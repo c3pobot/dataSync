@@ -1,18 +1,9 @@
 'use strict'
-const { readFile, reportError } = require('./helper')
+const { readFile, getSkillMap } = require('./helper')
 const effectMap = require('./map/effect')
 
 let errored = false
-const setErrorFlag = (err)=>{
-  try{
-    errored = true
-    console.error(err)
-  }catch(e){
-    errored = true
-    console.error(e);
-  }
-}
-const CleanEffectName = (string)=>{
+const cleanEffectName = (string)=>{
   if(string){
     string = string.replace('\\n', '')
     string = string.replace(/\[c\]/g, ' ')
@@ -22,7 +13,7 @@ const CleanEffectName = (string)=>{
     return string.trim()
   }
 }
-const AddTags = async(unit, skill, tags = [], data = {})=>{
+const addTags = async(unit, skill, tags = [], data = {})=>{
   try{
     const tempUnit = {
       nameKey: unit.nameKey,
@@ -35,7 +26,7 @@ const AddTags = async(unit, skill, tags = [], data = {})=>{
       if(tags[i].nameKey){
         if(skill.descKey.toLowerCase().includes(tags[i].nameKey.toLowerCase())){
           if(data.effects?.filter(x=>x.nameKey === tags[i].nameKey).length === 0 && tags[i].persistentLocKey){
-            const tempEffect = JSON.parse(JSON.stringify(tags[i]))
+            let tempEffect = JSON.parse(JSON.stringify(tags[i]))
             tempEffect.id = tempEffect.persistentLocKey
             tempEffect.tags = []
             tempEffect.units = []
@@ -47,150 +38,122 @@ const AddTags = async(unit, skill, tags = [], data = {})=>{
             if(data.effects[effectIndex].units.filter(x=>x.skillId === skill.id).length === 0 )  data.effects[effectIndex].units.push(tempUnit)
           }
         }
-        mongo.del('missingEffects', {_id: tags[i].tag})
+        mongo.del('missingEffectList', {_id: tags[i].tag})
       }else{
         if(data.missingEffects?.filter(x=>x.tag === tags[i].tag).length === 0){
-          const tempTag = JSON.parse(JSON.stringify(tags[i]))
+          let tempTag = JSON.parse(JSON.stringify(tags[i]))
           tempTag.units = []
-          missingEffects.push(tempTag)
+          data.missingEffects.push(tempTag)
         }
-        let effectIndex = data.effects?.findIndex(x=>x.tag === tags[i].tag)
+        let effectIndex = data.missingEffects?.findIndex(x=>x.tag === tags[i].tag)
         if(effectIndex){
-          if(data.effects[effectIndex].units.filter(x=>x.skillId === skill.id).length === 0)  data.effects[effectIndex].units.push(tempUnit)
+          if(data.missingEffects[effectIndex].units.filter(x=>x.skillId === skill.id).length === 0)  data.missingEffects[effectIndex].units.push(tempUnit)
         }
       }
     }
     if(!errored) return true
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
-const CheckUnit = async(unit, data = {})=>{
+const checkUnit = async(unit, data = {})=>{
   try{
-    if(!unit.skills) return
-    for(let i in unit.skills){
+    if(!unit || !unit.skill) throw('units missing in checkUnits')
+    for(let i in unit.skill){
       if(errored) continue
-      const tempSkill = await CheckSkill(unit.skills[i], data)
-      if(tempSkill){
-        tempSkill.unitNameKey = unit.nameKey
-        tempSkill.unitBaseId = unit.baseId
-        mongo.set('mechanicList', {_id: unit.skills[i].id}, tempSkill)
-        if(tempSkill?.tags?.length > 0){
-          const status = await AddTags(unit, unit.skills[i], tempSkill.tags)
-          if(!status) errored = true
-        }
-      }else{
-        errored = true
+      let tags = await checkSkill(unit.skill[i], data)
+      if(tags?.length > 0){
+        let status = await addTags(unit, unit.skill[i], tags, data)
+        if(!status) throw('error with AddTags in checkUnits for '+unit.baseId)
       }
     }
     if(!errored) return true
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
-const CheckSkill = async(skill, data = {})=>{
+const checkSkill = async(skill, data = {})=>{
   try{
     if(!skill) return
-    const ability = data.abilityList?.find(x=>x.id === skill.abilityId);
-    if(!ability) return
-    const tempSkill = JSON.parse(JSON.stringify(skill))
-    tempSkill.icon = ability.icon
-    tempSkill.cooldownType = ability.cooldownType
-    tempSkill.cooldown = ability.cooldown
-    tempSkill.tiers = []
-    tempSkill.tags = []
-    const baseTier = await CheckEffects(ability.effectReference, 0, data)
-    if(baseTier) tempSkill.tiers.push(baseTier)
-    if(baseTier?.tags?.length > 0) await MergeTags(tempSkill.tags, baseTier.tags)
-
-    if(ability?.tier?.length > 0){
-      for(let i in ability.tier){
-        if(errored) continue
-        const tempTier = await CheckEffects(ability.tier[i].effectReference, (+i + 1), data)
-        if(tempTier){
-          tempTier.cooldownMaxOverride = ability.tier[i].cooldownMaxOverride
-          tempSkill.tiers.push(tempTier)
-          if(tempTier.tags?.length > 0) await MergeTags(tempSkill.tags, tempTier.tags)
-        }
+    let ability = data.abilityList?.find(x=>x.id === skill.abilityId);
+    if(!ability) throw('ability not found in checkSkill for'+skill.abilityId)
+    let tags = await checkEffects(ability.effectReference, data)
+    if(!tags) tags = []
+    for(let i in ability.tier){
+      if(errored) continue
+      let tierTags = await checkEffects(ability.tier[i].effectReference, data)
+      if(tierTags?.length > 0){
+        let mergedTags = await mergeTags(tags, tierTags)
+        if(mergedTags?.length > 0) tags = JSON.parse(JSON.stringify(mergedTags))
       }
     }
-    if(!errored) return tempSkill
+    if(!errored && tags.length > 0) return tags
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
-const CheckEffects = async(effectReference = [], tier, data = {})=>{
+const checkEffects = async(effectReference = [], data = {})=>{
   try{
-    const res = {effects: [], tags: [], tier: tier}
+    let res = []
     for(let i in effectReference){
-      const tempObj = await CheckEffect(effectReference[i].id, data)
+      let tempObj = await checkEffect(effectReference[i].id, data)
       if(!tempObj) continue
-      res.effects.push(tempObj)
-      if(tempObj.tags?.length > 0) res.tags = res.tags.concat(tempObj.tags)
+      if(tempObj?.length > 0) res = res.concat(tempObj)
     }
-    if(!errored) return res
+    if(!errored && res.length > 0) return res
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
-const CheckEffect = async(id, data = {})=>{
+const checkEffect = async(id, data = {})=>{
   try{
     const effect = data.effectList.find(x=>x.id === id)
     if(!effect) return
-    let res = JSON.parse(JSON.stringify(effect))
-    res.effectReference = []
-    res.tags = await CheckTags(effect, data)
-    if(!res.tags) res.tags = []
+    let res = await checkTags(effect, data)
+    if(!res) res = []
     if(effect.effectReference?.length > 0){
       for(let i in effect.effectReference){
-        const tempEffect = await CheckEffect(effect.effectReference[i].id, data)
-        if(tempEffect){
-          res.effectReference.push(tempEffect)
-          if(tempEffect.tags.length > 0) res.tags = res.tags.concat(tempEffect.tags)
-        }
+        let tempEffect = await checkEffect(effect.effectReference[i].id, data)
+        if(tempEffect?.length > 0) res = res.concat(tempEffect)
       }
     }
     if(!errored) return res
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
-const CheckTags = async(effect, data)=>{
+const checkTags = async(effect, data)=>{
   try{
-    const tags = []
+    let tags = []
     if(effect.descriptiveTag?.filter(x=>x.tag.startsWith('countable_')).length > 0){
       for(let i in effect.descriptiveTag){
-        const tempTag = await CheckTag(effect.descriptiveTag[i].tag, effect, data)
+        let tempTag = await checkTag(effect.descriptiveTag[i].tag, effect, data)
         if(tempTag) tags.push(tempTag)
       }
     }
     if(!errored) return tags
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
-const CheckTag = async(tag, effect, data = {})=>{
+const checkTag = async(tag, effect, data = {})=>{
   try{
     if(tag && !tag.includes('ability') && !tag.includes('countable') && !tag.includes('clearable') && !tag.includes('featcounter') && !tag.startsWith('ai_') && tag !== 'buff' && tag !== 'debuff'){
-      const tempTag = {
+      let tempTag = {
         tag: tag
       }
       if(effect.persistentIcon) tempTag.persistentIcon = effect.persistentIcon
       if(effect.persistentLocKey){
         tempTag.persistentLocKey = effect.persistentLocKey
       }else{
-        const tempLocKeyName = 'BattleEffect_'+tag.replace('_buff','up').replace('_debuff','down').replace('special_')
-        const tempLocKey = data.langArray.find(x=>x.toLowerCase() === tempLocKeyName.toLowerCase())
-        if(tempLocKey){
-          tempTag.persistentLocKey = tempLocKey
-        }
+        let tempLocKeyName = 'BattleEffect_'+tag.replace('_buff','up').replace('_debuff','down').replace('special_')
+        let tempLocKey = data.langArray.find(x=>x.toLowerCase() === tempLocKeyName.toLowerCase())
+        if(tempLocKey) tempTag.persistentLocKey = tempLocKey
       }
-
       if(!tempTag.persistentLocKey){
         if(effectMap && effectMap[tag]) tempTag.persistentLocKey = effectMap[tag]
       }
-
-      let effectName = CleanEffectName(data.lang[tempTag.persistentLocKey]), tempName
+      let effectName = cleanEffectName(data.lang[tempTag.persistentLocKey]), tempName
       if(effectName) tempName = effectName.split(":")
       if(tempName){
         if(tempName[0]) tempTag.nameKey = tempName[0].trim()
@@ -199,22 +162,22 @@ const CheckTag = async(tag, effect, data = {})=>{
       if(!errored) return tempTag
     }
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
-const MergeTags = async(array = [], tags = [])=>{
+const mergeTags = async(array = [], tags = [])=>{
   try{
     for(let i in tags){
       if(array.filter(x=>x.nameKey === tags[i].nameKey && x.tag === tags[i].tag).length === 0) array.push(tags[i])
     }
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const mapEffects = async(langKey, langIndex, effects = [])=>{
   try{
     if(!langKey) return
-    let effectName = CleanEffectName(langKey), tempName, nameKey, descKey
+    let effectName = cleanEffectName(langKey), tempName, nameKey, descKey
     if(effectName) tempName = effectName.split(":")
     if(tempName){
       if(tempName[0]) nameKey = tempName[0].trim()
@@ -234,11 +197,41 @@ const mapEffects = async(langKey, langIndex, effects = [])=>{
       effects.push(tempObj)
     }else{
       const index = effects.findIndex(x=>x.nameKey === nameKey)
-      if(index >= 0) effects[indes].locKeys?.push(langIndex.trim())
+      if(index >= 0) effects[index].locKeys?.push(langIndex.trim())
     }
     return effects
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
+  }
+}
+const getSkill = (skillReference, skillMap)=>{
+  try{
+    if(!skillReference || !skillMap) throw('missing data for getSkill')
+    let res = {}
+    for(let i in skillReference){
+      if(skillMap[skillReference[i].skillId]) res[skillReference[i].skillId] = skillMap[skillReference[i].skillId]
+    }
+    if(Object.values(res)?.length > 0) return res
+  }catch(e){
+    throw(e)
+  }
+}
+const getUnitMap = async(unitList = [], skillMap, lang)=>{
+  try{
+    if(unitList.length === 0 || !skillMap || !lang) return
+    let res = {}
+    for(let i in unitList){
+      res[unitList[i].baseId] = {
+        nameKey: lang[unitList[i].nameKey] || unitList[i].nameKey,
+        baseId: unitList[i].baseId,
+        skill: {}
+      }
+      let skill = await getSkill(unitList[i].skillReference, skillMap)
+      if(skill) res[unitList[i].baseId].skill = skill
+    }
+    if(Object.values(res)?.length > 0) return res
+  }catch(e){
+    throw(e)
   }
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
@@ -248,32 +241,38 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     let langArray = Object.keys(lang)
     let effectList = await readFile('effect.json', gameVersion)
     let abilityList = await readFile('ability.json', gameVersion)
-    let units = await mongo.find('units', {}, {portrait: 0, thumbnail: 0})
+    let skillList = await readFile('skill.json', gameVersion)
+    let skillMap = await getSkillMap(skillList, abilityList, lang)
+    fs.writeFileSync('./skillMap.json', JSON.stringify(skillMap, null, 2))
+    let unitList = await readFile('units.json', gameVersion)
+    if(unitList) unitList = unitList.filter(x=>+x.rarity === 7 && x.obtainable === true && +x.obtainableTime === 0)
+    let unitMap = await getUnitMap(unitList, skillMap, lang)
+    fs.writeFileSync('./unitMap.json', JSON.stringify(unitMap, null, 2))
     let effects = await mongo.find('effectList', {}, {_id: 0, TTL:0})
     let missingEffects = []
     if(!effects) effects = []
     let effectAutoComplete = []
-    if(!lang || !langArray || !effectList || !abilityList || !unit || !effects) return
-
+    if(!lang || !langArray || !effectList || !abilityList || !unitMap || !effects) return
+    let gameData = {abilityList: abilityList, effectList: effectList, lang: lang, langArray: langArray, effects: effects, missingEffects: missingEffects, skillMap: skillMap}
     for(let i in lang){
       if(errored) continue
       if(lang[i] && i.startsWith('BattleEffect_')){
         let status = await mapEffects(lang[i], i, effects)
         if(status){
-          effects = status
+          gameData.effects = status
         }else{
           errored = true
         }
       }
     }
-    let gameData = {abilityList: abilityList, effectList: effectList, langArray: langArray, effects: effects, missingEffects: missingEffects}
-    for(let i in units){
+    for(let i in unitMap){
       if(errored) continue
-      let status = await CheckUnit(units[i], gameData)
+      let status = await checkUnit(unitMap[i], gameData)
       if(!status) errored = true
     }
     if(!errored){
       effects = gameData.effects
+      missingEffects = gameData.missingEffects
       if(effects?.length > 0){
         for(let i in effects){
           await mongo.set('effectList', {_id: effects[i].id}, effects[i])
@@ -286,13 +285,13 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       }
       if(missingEffects?.length > 0){
         for(let i in missingEffects){
-          if(missingEffects[i].units?.length > 0) await mongo.set('missingEffects', {_id: missingEffects[i].tag}, missingEffects[i])
+          if(missingEffects[i].units?.length > 0) mongo.set('missingEffects', {_id: 'missing/'+missingEffects[i].tag}, missingEffects[i])
         }
       }
     }
-    langArray = null, abilityList = null, effectList = null, lang = null, effects = null, units = null, missingEffects = null
+    lang = null, langArray = null, effectList = null, abilityList = null, skillList = null, skillMap = null, unitList = null, unitMap = null, effects = null
     if(!errored) return true
   }catch(e){
-    reportError(e)
+    throw(e)
   }
 }

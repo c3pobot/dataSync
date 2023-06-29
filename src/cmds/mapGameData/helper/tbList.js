@@ -1,15 +1,5 @@
 'use strict'
-const { readFile, reportError } = require('./helper')
-let errored = false
-const setErrorFlag = (err)=>{
-  try{
-    errored = true
-    reportError(err)
-  }catch(e){
-    errored = true
-    console.error(e);
-  }
-}
+const { readFile } = require('./helper')
 const GetPhase = (zoneId)=>{
   try{
     if(zoneId.includes('phase01_')) return 'P1'
@@ -19,7 +9,7 @@ const GetPhase = (zoneId)=>{
     if(zoneId.includes('phase05_')) return 'P5'
     if(zoneId.includes('phase06_')) return 'P6'
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const GetConflict = (zoneId)=>{
@@ -31,7 +21,7 @@ const GetConflict = (zoneId)=>{
     if(zoneId.includes('_conflict05')) return 'C5'
     if(zoneId.includes('_conflict06')) return 'C6'
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const GetType = (combatType, alignment)=>{
@@ -42,7 +32,7 @@ const GetType = (combatType, alignment)=>{
     if(alignment === 2) return 'LS'
     if(alignment === 3) return 'DS'
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const GetSort = (type, conflict)=>{
@@ -52,32 +42,30 @@ const GetSort = (type, conflict)=>{
     if(type === 'LS') return 3
     return +(conflict?.replace('C', ''))
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const getZoneDefinition = async(conflictZoneDefinition = [], lang = {})=>{
   try{
     if(conflictZoneDefinition.length === 0) return
     for(let i in conflictZoneDefinition){
-      conflictZoneDefinition[i].zoneDefinition.nameKey = lang[zoneDefinition?.nameKey] || conflictZoneDefinition[i].zoneDefinition.nameKey
+      conflictZoneDefinition[i].zoneDefinition.nameKey = lang[conflictZoneDefinition[i].zoneDefinition.nameKey] || conflictZoneDefinition[i].zoneDefinition.nameKey
       conflictZoneDefinition[i].zoneDefinition.phase = GetPhase(conflictZoneDefinition[i].zoneDefinition.zoneId)
       conflictZoneDefinition[i].zoneDefinition.conflict = GetConflict(conflictZoneDefinition[i].zoneDefinition.zoneId)
       conflictZoneDefinition[i].zoneDefinition.type = GetType(conflictZoneDefinition[i].territoryBattleZoneUnitType, conflictZoneDefinition[i].forceAlignment)
-      conflictZoneDefinition[i].zoneDefinition.sort = GetSort(conflictZoneDefinition[i].zoneDefinition.type, tbDef[i].conflictZoneDefinition[c].zoneDefinition.conflict)
+      conflictZoneDefinition[i].zoneDefinition.sort = GetSort(conflictZoneDefinition[i].zoneDefinition.type, conflictZoneDefinition[i].zoneDefinition.conflict)
     }
-    if(!errored) return conflictZoneDefinition
+    return conflictZoneDefinition
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    errored = false
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
     let tbList = await readFile('territoryBattleDefinition.json', gameVersion)
     let autocomplete = []
     for(let i in tbList){
-      if(errored) continue
       let tb = tbList[i]
       tb.nameKey = lang[tb.nameKey] || tb.nameKey
       autocomplete.push({name: tb.nameKey, value: tb.id})
@@ -87,12 +75,12 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
         await mongo.set('tbList', {_id: tb.id}, tb)
       }
     }
-    if(!errored && autoComplete?.length > 0){
+    if(autocomplete?.length > 0){
       await mongo.set('autoComplete', {_id: 'tb-name'}, {data: autocomplete, include: true})
-      await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.tb-name': 'tb-name'} )
+      //await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.tb-name': 'tb-name'} )
     }
     lang = null, tbList = null
-    if(!errored) return true
+    if(autocomplete?.length > 0) return true
   }catch(e){
     reportError(e)
   }

@@ -19,7 +19,7 @@ const Checkfile = async(file, version)=>{
       return true
     }
   }catch(e){
-    console.error(e)
+    throw(e)
   }
 }
 module.exports = async(file, version, forceFile = false)=>{
@@ -35,6 +35,6 @@ module.exports = async(file, version, forceFile = false)=>{
       return true
     }
   }catch(e){
-    console.error(e);
+    cthrow(e);
   }
 }

@@ -1,5 +1,5 @@
 'use strict'
-const { readFile, reportError } = require('./helper')
+const { readFile } = require('./helper')
 const enumDiff = {I: 8, II: 9, III: 10}
 const getDifficulty = (id)=>{
   try{
@@ -13,7 +13,7 @@ const getDifficulty = (id)=>{
     }
     return res
   }catch(e){
-    console.error(e);
+    throw(e);
   }
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
@@ -40,6 +40,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     lang = null, challengeList = null
     return true
   }catch(e){
-    reportError(e)
+    throw(e)
   }
 }

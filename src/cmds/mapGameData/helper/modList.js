@@ -1,16 +1,7 @@
 'use strict'
-const { readFile, reportError } = require('./helper')
+const { readFile } = require('./helper')
 
 let errored = false
-const setErrorFlag = (err)=>{
-  try{
-    errored = true
-    reportError(err)
-  }catch(e){
-    errored = true
-    console.error(e);
-  }
-}
 const getTiers = async(tableRows = [], data = {})=>{
   try{
     let res = []
@@ -23,7 +14,7 @@ const getTiers = async(tableRows = [], data = {})=>{
     }
     if(!errored) return res
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const getIngredients = async(ingredients = [], data = {})=>{
@@ -38,15 +29,15 @@ const getIngredients = async(ingredients = [], data = {})=>{
         ingredients[i].iconKey = equipment.iconKey
         ingredients[i].sellValue = equipment.sellValue
       }else{
-        if(ingredients[i].id !=== 'GRIND') continue
-        ingredients[i].nameKey = lang['Shared_Currency_Grind']
-        ingredients[i].descKey = lang['Shared_Currency_Grind_Desc_TU13']
+        if(ingredients[i].id !== 'GRIND') continue
+        ingredients[i].nameKey = data.lang['Shared_Currency_Grind']
+        ingredients[i].descKey = data.lang['Shared_Currency_Grind_Desc_TU13']
         ingredients[i].iconKey = 'tex.goldcreditbar'
       }
     }
     if(!errored) return ingredients
   } catch (e) {
-    setErrorFlag(e)
+    throw(e)
   }
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
@@ -62,28 +53,28 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
 
     if(!lang || !equipmentList || !recipeList || !statModList || !tableList || !xpTableList) return
     let gameData = { equipmentList: equipmentList, lang: lang, recipeList: recipeList }
-    for(let i in statMod){
+    for(let i in statModList){
       if(errored) continue
-      let xpTable = xpTableList.find(x=>x.id === statMod[i].levelTableId)
+      let xpTable = xpTableList.find(x=>x.id === statModList[i].levelTableId)
 
-      let tempObj = { id: statMod[i].id, slot: (+statMod[i].slot - 1), rarity: +statMod[i].rarity, setId: +statMod[i].setId, level : {  id: statMod[i].levelTableId, table: xpTable?.row || [] } }
-      if(statMod[i].promotionId){
-        let recipe = recipeList.find(x=>x.id === statMod[i].promotionRecipeId)
-        tempObj.promotion = { id: statMod[i].promotionId, ingredients: [] }
+      let tempObj = { id: statModList[i].id, slot: (+statModList[i].slot - 1), rarity: +statModList[i].rarity, setId: +statModList[i].setId, level : {  id: statModList[i].levelTableId, table: xpTable?.row || [] } }
+      if(statModList[i].promotionId){
+        let recipe = recipeList.find(x=>x.id === statModList[i].promotionRecipeId)
+        tempObj.promotion = { id: statModList[i].promotionId, ingredients: [] }
         let ingredients = await getIngredients(recipe?.ingredients, gameData)
         if(ingredients) tempObj.promotion.ingredients
       }
-      if(statMod[i].tierUpRecipeTableId){
-        tempObj.tier = {id: statMod[i].tierUpRecipeTableId, tiers: []}
-        let table = table.find(x=>x.id === statMod[i].tierUpRecipeTableId)
+      if(statModList[i].tierUpRecipeTableId){
+        tempObj.tier = {id: statModList[i].tierUpRecipeTableId, tiers: []}
+        let table = tableList.find(x=>x.id === statModList[i].tierUpRecipeTableId)
         let tiers = await getTiers(table?.row, gameData)
         if(tiers) tempObj.tier.tiers = tiers
       }
-      await mongo.set('modList', {_id: statMod[i].id}, tempObj)
+      await mongo.set('modList', {_id: statModList[i].id}, tempObj)
     }
     lang = null, equipmentList = null, recipeList = null, statModList = null, tableList = null, xpTableList = null
     if(!errored) return true
   }catch(e){
-    reportError(e)
+    throw(e)
   }
 }

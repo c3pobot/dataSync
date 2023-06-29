@@ -1,9 +1,10 @@
 'use strict'
 const path = require('path')
 const fs = require('fs')
+const CheckImages = require('./checkImages')
 const DATA_PATH = process.env.DATA_PATH || path.join(baseDir, 'data')
 const enumOmicron = require('./maps/omicron')
-
+const pct = require('./maps/pct')
 const reportError = (err, lines = 3)=>{
   try{
     if(err.stack && err.message){
@@ -27,7 +28,23 @@ const readFile = (file, version)=>{
     console.error(e);
   }
 }
-const getRecipeList = async()=>{}
+const getRecipeList = async(recipeList, lang)=>{
+  try{
+    let list = recipeList.map(r=>{
+      if(r.ingredients.length > 0){
+        return Object.assign({}, {
+          id: r.id,
+          ingredients: r.ingredients,
+          result: r.result,
+          nameKey: (lang[r.descKey] || r.descKey)
+        })
+      }
+    })
+    return list;
+  }catch(e){
+    throw(e)
+  }
+}
 const getSkillMap = (skillList, abilityList, lang, excludeDesc = false)=>{
   try{
     if(!abilityList || !skillList || !lang || skillList?.length === 0 || abilityList?.length === 0) throw ('missing data for getSkillMap')
@@ -188,6 +205,38 @@ const getUltimate = async(limitBreakRef = [], data = {}, excludeDesc = false)=>{
     throw(e);
   }
 }
+const getStatMap = (enums = {}, lang = {}, keyMapping = {})=>{
+  try{
+    const staticMap = {UNITSTATMASTERY: {nameKey: 'UNIT_STAT_STAT_VIEW_MASTERY'}}
+    let keyMap = [], res = {}
+    for(let i in keyMapping){
+      if(i?.startsWith('UnitStat_')){
+        let statKey = keyMapping[i].replace('__', '')
+        keyMap.push({nameKey: keyMapping[i].replace('__', ''), enum: statKey.replace('UnitStat_', 'UNITSTAT').toUpperCase()})
+      }
+    }
+    for(let i in enums){
+      let key = keyMap.find(x=>x.enum.startsWith(i))
+      if(!key) key = keyMap.find(x=>x.enum.startsWith(i.replace('UNITSTATMAX', 'UNITSTAT')))
+      if(!key) key = staticMap[i]
+      let nameKey = lang[key?.nameKey] || key?.nameKey
+      if(!nameKey) nameKey = i
+      res[enums[i]] = { statId: enums[i], pct: pct[enums[i]], enum: i, nameKey: nameKey,  }
+    }
+    fs.writeFileSync('./statMap.json', JSON.stringify(res, null, 2))
+    if(!errored && Object.values(res)?.length > 0) return res
+  }catch(e){
+    throw(e)
+  }
+}
+const checkUnitImages = async(images = [], assetVersion)=>{
+  try{
+    await CheckImages(images, assetVersion, 'thumbnail')
+    await CheckImages(images, assetVersion, 'portrait')
+  }catch(e){
+    console.error(e);
+  }
+}
 module.exports = {
   reportError: reportError,
   readFile: readFile,
@@ -196,5 +245,6 @@ module.exports = {
   getSkill: getSkill,
   getCrewSkill: getCrewSkill,
   getOffenseStatId: getOffenseStatId,
-  getUltimate: getUltimate
+  getUltimate: getUltimate,
+  getStatMap: getStatMap
 }

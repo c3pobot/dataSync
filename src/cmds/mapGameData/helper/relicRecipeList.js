@@ -1,15 +1,6 @@
 'use strict'
-const { readFile, reportError } = require('./helper')
-let errored = false, tierEmum
-const setErrorFlag = (err)=>{
-  try{
-    errored = true
-    reportError(err)
-  }catch(e){
-    errored = true
-    console.error(e);
-  }
-}
+const { readFile } = require('./helper')
+let tierEmum
 const createTierEnum = ()=>{
   try{
     for(let i = 1;i<11;i++){
@@ -17,7 +8,7 @@ const createTierEnum = ()=>{
       tierEmum['relic_promotion_recipe_'+i.toString().padStart(2, '0')] = i
     }
   }catch(e){
-    setErrorFlag(e);
+    throw(e);
   }
 }
 const getIngredients = (ingredients = [], data = {})=>{
@@ -25,7 +16,7 @@ const getIngredients = (ingredients = [], data = {})=>{
     if(ingredients.length === 0) return []
     let res = []
     for(let i in ingredients){
-      if(ingredients[i].id !== 'GRIND') continue
+      if(ingredients[i].id === 'GRIND') continue
       let mat = data.materialList?.find(x=>x.id === ingredients[i].id)
       if(!mat) continue
       let tempObj = {
@@ -36,15 +27,14 @@ const getIngredients = (ingredients = [], data = {})=>{
       }
       res.push(tempObj)
     }
-    if(!errored) return res
+    return res
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 createTierEnum()
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    errored = false
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
     let recipeList = await readFile('recipe.json')
     let materialList = await readFile('material.json')
@@ -62,10 +52,10 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
         ingredients: []
       }
       recipe.ingredients = await getIngredients(relicList[i].ingredients, gameData)
-      if(!errored) await mongo.set('recipeList', {_id: tempObj.id}, recipe)
+      await mongo.set('relicRecipeList', {_id: recipe.id}, recipe)
     }
-    if(!errored) return true
+    return true
   }catch(e){
-    reportError(e);
+    throw(e);
   }
 }

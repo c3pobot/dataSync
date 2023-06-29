@@ -1,5 +1,5 @@
 'use strict'
-const { readFile, reportError } = require('./helper')
+const { readFile } = require('./helper')
 const CheckImages = require('./checkImages')
 
 const raidTokens = {
@@ -9,15 +9,6 @@ const raidTokens = {
   RAID_REWARD_CURRENCY_04: { nameKey: 'Shared_Currency_RaidReward_04', icon: 'tex.guild_raid_special' }
 }
 let errored = false
-const setErrorFlag = (err)=>{
-  try{
-    errored = true
-    reportError(err)
-  }catch(e){
-    errored = true
-    console.error(e);
-  }
-}
 const getLoot = (previewItem = [], data = {})=>{
   try{
     if(!previewItem.length === 0) return
@@ -25,15 +16,15 @@ const getLoot = (previewItem = [], data = {})=>{
     for(let i in previewItem){
       if(!raidTokens[previewItem[i].id] || errored) continue;
       let loot = JSON.parse(JSON.stringify(raidTokens[previewItem[i].id]))
-      if(data.lang[loot.nameKey]) loot.nameKey = data.lang[res.nameKey]
+      if(data.lang[loot.nameKey]) loot.nameKey = data.lang[loot.nameKey]
       loot.qty = previewItem[i].minQuantity
       loot.type = previewItem[i].type
-      data.images.push(loot.icon)
+      if(data.images.filter(x=>x === loot.icon).length === 0) data.images.push(loot.icon)
       res.push(loot)
     }
     if(!errored && res.length > 0) return res
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const getRewards = async(rankRewardPreview = [], data = {})=>{
@@ -43,20 +34,20 @@ const getRewards = async(rankRewardPreview = [], data = {})=>{
     for(let i in rankRewardPreview){
       if(errored) continue;
       let reward = JSON.parse(JSON.stringify(rankRewardPreview[i].primaryReward[0]))
-      reward.rankStart = rankRewardPreview.rankStart
-      reward.rankEnd = rankRewardPreview.rankEnd
+      reward.rankStart = rankRewardPreview[i].rankStart
+      reward.rankEnd = rankRewardPreview[i].rankEnd
       reward.loot = []
       let rewardDef = data.rewardList.find(x=>x.id === reward.id)
       if(!rewardDef) continue
       reward.texture = rewardDef.texture
       reward.nameKey = data.lang[rewardDef.iconTextKey] || rewardDef.iconTextKey
-      let loot = await getLoot(rewardDef.previewItem)
+      let loot = await getLoot(rewardDef.previewItem, data)
       if(loot) reward.loot = loot
       res.push(reward)
     }
     if(!errored && res.length > 0) return res
   }catch(e){
-    setErrorFlag(e);
+    throw(e);
   }
 }
 const getRequirements = (entryCategoryAllowed, data = {})=>{
@@ -70,7 +61,7 @@ const getRequirements = (entryCategoryAllowed, data = {})=>{
     }
     if(!errored) return res
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const getMission = async(campaignNodeMission, data = {})=>{
@@ -89,7 +80,7 @@ const getMission = async(campaignNodeMission, data = {})=>{
     if(rewards) res.rewards = rewards
     if(!errored) return res
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 const getMissions = async(campaignNodeMission = [], data = {})=>{
@@ -103,7 +94,7 @@ const getMissions = async(campaignNodeMission = [], data = {})=>{
     }
     if(!errored && res.length > 0) return res
   }catch(e){
-    setErrorFlag(e)
+    throw(e)
   }
 }
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
@@ -121,14 +112,14 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     let autoComplete = [],  gameData = { lang: lang, campaignNode: campaignNode, rewardList: rewardList, images: [], autoComplete: [] }
     for(let i in guildRaidList){
       if(errored) continue;
-      let campaign = data.campaignNode?.find(x=>x.id === guildRaidList[i]?.campaignElementIdentifier?.campaignNodeId)
+      let campaign = campaignNode?.find(x=>x.id === guildRaidList[i]?.campaignElementIdentifier?.campaignNodeId)
       if(!campaign) continue;
       let raid = JSON.parse(JSON.stringify(guildRaidList[i]))
       raid.nameKey = lang[campaign.nameKey] || campaign.nameKey
       raid.mission = []
-      if(raid.image) gameData.images?.push(raid.image)
-      if(raid.portraitIcon) gameData.images?.push(raid.portraitIcon)
-      if(raid.infoImage) gameData.images?.push(raid.infoImage)
+      if(raid.image && gameData.images.filter(x=>x === raid.image).length === 0) gameData.images?.push(raid.image)
+      if(raid.portraitIcon && gameData.images.filter(x=>x === raid.image).length === 0) gameData.images?.push(raid.portraitIcon)
+      if(raid.infoImage && gameData.images.filter(x=>x === raid.image).length === 0) gameData.images?.push(raid.infoImage)
       let missions = await getMissions(campaign.campaignNodeMission, gameData)
       if(!errored && missions?.length > 0) raid.mission = missions
       if(!errored && raid.mission.length > 0){
@@ -144,6 +135,6 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     guildRaidList = null, campainList = null, rewardList = null, lang = null, guildCampaign = null, campaignNode = null
     if(!errored && autoComplete?.length > 0) return true
   }catch(e){
-    reportError(e);
+    throw(e);
   }
 }

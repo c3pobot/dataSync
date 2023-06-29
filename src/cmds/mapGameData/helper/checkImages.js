@@ -10,7 +10,6 @@ const getFileNames = (dir)=>{
         resolve(files)
       })
     }catch(e){
-      setErrorFlag(e)
       resolve()
     }
   })

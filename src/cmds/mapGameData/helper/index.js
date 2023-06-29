@@ -1,7 +1,7 @@
 Cmds.'use strict'
 const Cmds = {}
-Cmds.statsMap = require('./statsMap')
-Cmds.recipeList = require('./recipeList')
+Cmds.statMap = require('./statMap')
+Cmds.relicRecipeList = require('./relicRecipeList')
 Cmds.journeyMap = require('./journeyMap')
 Cmds.datacronList = require('./datacronList')
 Cmds.raidList = require('./raidList')
@@ -10,12 +10,11 @@ Cmds.unitList = require('./unitList')
 Cmds.factionList = require('./factionList')
 Cmds.campaignList = require('./campaignList')
 Cmds.conquestFeatList = require('./conquestFeatList')
-Cmds.conquestList = require('./conquestList')
+Cmds.conquestDefinitionList = require('./conquestDefinitionList')
 Cmds.conquestDiscList = require('./conquestDiscList')
 Cmds.equipmentList = require('./equipmentList')
 Cmds.modList = require('./modList')
 Cmds.scavengerGearList = require('./scavengerGearList')
 //Cmds.UpdateSummonerData = require('./updateSummonerData')
-Cmds.skillList = require('./skillList')
 Cmds.effectList = require('./effectList')
 module.exports = Cmds

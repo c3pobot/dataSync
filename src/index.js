@@ -6,7 +6,7 @@ const SYNC_INTERVAL = +(process.env.SYNC_INTERVAL || 1)
 
 const { checkVersions } = require('./cmds')
 
-global.updateInProgress = 0
+global.updateInProgress = false
 global.mongo = new MongoWrapper({
   url: 'mongodb://'+process.env.MONGO_USER+':'+process.env.MONGO_PASS+'@'+process.env.MONGO_HOST+'/',
   authDb: process.env.MONGO_AUTH_DB,
@@ -42,7 +42,7 @@ const CheckAPIReady = async()=>{
 const StartSync = async()=>{
   try{
     let obj = await getGameVersions()
-    if(obj?.gameVersion && obj?.localeVersion){
+    if(obj?.gameVersion && obj?.localeVersion && obj?.assetVersion){
       await checkVersions(obj)
     }
     setTimeout(StartSync, SYNC_INTERVAL * 60 * 1000)

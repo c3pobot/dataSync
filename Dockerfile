@@ -4,7 +4,7 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 FROM node:16-alpine AS app
-RUN mkdir -p /app/data; && chown -R node:node /app
+RUN mkdir -p /app/data; mkdir -p /app/public/asset; mkdir -p /app/public/portrait; mkdir -p /app/public/thumbnail && chown -R node:node /app
 WORKDIR /app
 
 COPY --from=builder node_modules node_modules/
