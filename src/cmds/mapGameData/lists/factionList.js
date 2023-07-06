@@ -1,5 +1,6 @@
 'use strict'
 const { readFile } = require('./helper')
+const mongo = require('mongoapiclient')
 const altName = {'species_wookiee_ls': 'Light Side Wookiee'}
 let errored = false
 const getFactionMap = (categoryList = [], lang = {})=>{

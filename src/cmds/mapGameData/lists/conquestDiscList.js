@@ -1,5 +1,6 @@
 'use strict'
 const { readFile } = require('./helper')
+const mongo = require('mongoapiclient')
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     let artifactDefinitionList = await readFile('artifactDefinition.json', gameVersion)

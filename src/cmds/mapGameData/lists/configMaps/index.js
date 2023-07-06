@@ -3,6 +3,7 @@ const Cmds = {}
 Cmds.statDefMap = require('./statDefMap')
 Cmds.journeyMap = require('./journeyMap')
 Cmds.modDefMap = require('./modDefMap')
+Cmds.dataCronDefMap = require('./dataCronDefMap')
 Cmds.unitDefMap = require('./unitDefMap')
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{

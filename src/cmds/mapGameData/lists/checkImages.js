@@ -1,16 +1,16 @@
 'use strict'
+const mongo = require('mongoapiclient')
 const path = require('path')
 const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(baseDir, 'public')
 const { v4: uuidv4 } = require('uuid')
 const SaveImage = require('../saveImage')
 const imagesToIgnore = require('./maps/imagestoignore.json')
+let mongoReady = false
 const checkForMissingAssets = async()=>{
   try{
-    if(mongoReady){
-      let list = await mongo.find('missingAssets', {})
-      if(list?.length > 0){
-        for(let i in list) await saveImages(list[i].imgs, list[i].assetVersion, list[i].dir, list[i]._id)
-      }
+    let list = await mongo.find('missingAssets', {})
+    if(list?.length > 0){
+      for(let i in list) await saveImages(list[i].imgs, list[i].assetVersion, list[i].dir, list[i]._id)
     }
     setTimeout(checkForMissingAssets, 30000)
   }catch(e){

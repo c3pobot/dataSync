@@ -1,7 +1,7 @@
 'use strict'
 const { readFile, getSkillMap } = require('./helper')
 const effectMap = require('./maps/effect')
-
+const mongo = require('mongoapiclient')
 let errored = false
 const cleanEffectName = (string)=>{
   if(string){

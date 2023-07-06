@@ -1,7 +1,7 @@
 'use strict'
 const { getSkillMap, readFile, getOffenseStatId, getSkill, getCrewSkill, getUltimate, checkUnitImages } = require('./helper')
 const nameKeyPayload = {include: false, 'data.unit': 'unit', 'data.unit1': 'unit', 'data.unit2': 'unit', 'data.leader': 'unit', 'data.character': 'character', 'data.ship': 'ship'}
-
+const mongo = require('mongoapiclient')
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)

@@ -71,7 +71,7 @@ const getSkillMap = (skillList, abilityList, lang, excludeDesc = false)=>{
       }
       if(!excludeDesc) list[s.id].descKey = lang[descKey] || descKey
       for(let i in s.tier){
-        if(!(list[s.id].zetaTier >= 0) && s.tier[i].isZetaTier){
+        if(list[s.id].zetaTier === 0 && s.tier[i].isZetaTier){
           list[s.id].isZeta = true
           list[s.id].zetaTier = +i + 2;
         }

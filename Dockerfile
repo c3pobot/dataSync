@@ -6,6 +6,7 @@ RUN npm install --omit=dev
 FROM node:16-alpine AS app
 RUN mkdir -p /app/data; mkdir -p /app/public/asset; mkdir -p /app/public/portrait; mkdir -p /app/public/thumbnail && chown -R node:node /app
 WORKDIR /app
+ENV NODE_PATH=/app/src
 
 COPY --from=builder node_modules node_modules/
 COPY . .

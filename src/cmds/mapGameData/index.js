@@ -1,5 +1,6 @@
 'use strict'
 const lists = require('./lists')
+const mongo = require('mongoapiclient')
 const checkVersion = (gameVersion, localeVersion, assetVersion, data)=>{
   try{
     let status = true

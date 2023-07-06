@@ -1,7 +1,7 @@
 'use strict'
 const { readFile } = require('./helper')
 const CheckImages = require('./checkImages')
-
+const mongo = require('mongoapiclient')
 const raidTokens = {
   RAID_REWARD_CURRENCY_01: { nameKey: 'Shared_Currency_RaidReward_01', icon: 'tex.guild_raid_personal' },
   RAID_REWARD_CURRENCY_02: { nameKey: 'Shared_Currency_RaidReward_02', icon: 'tex.guild_raid_general' },

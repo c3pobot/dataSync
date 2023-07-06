@@ -1,5 +1,6 @@
 'use strict'
 const { readFile, getStatMap } = require('../helper')
+const mongo = require('mongoapiclient')
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     let keyMapping = await readFile('Loc_Key_Mapping.txt.json', localeVersion)

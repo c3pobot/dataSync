@@ -1,5 +1,6 @@
 'use strict'
 const { readFile } = require('./helper')
+const mongo = require('mongoapiclient')
 const getConsumable = async(consumable = [], data = {})=>{
   try{
     let res = []

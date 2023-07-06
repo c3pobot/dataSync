@@ -1,5 +1,6 @@
 'use strict'
 const { getSkillMap, readFile, getOffenseStatId, getSkill, getCrewSkill, getUltimate } = require('../helper')
+const mongo = require('mongoapiclient')
 module.exports = async(gameVersion, localeVersion)=>{
   try{
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
@@ -34,7 +35,7 @@ module.exports = async(gameVersion, localeVersion)=>{
       if(skill) unit.skill = { ...unit.skill,...skill }
       let crewSkill = await getCrewSkill(u.crew, gameData)
       if(crewSkill) unit.skill = { ...unit.skill, ...crewSkill }
-      let ultimate = await getUltimate(u.limitBreakRef.filter(x=>x.powerAdditiveTag === 'ultimate'), gameData)
+      let ultimate = await getUltimate(u.limitBreakRef.filter(x=>x.powerAdditiveTag === 'ultimate'), gameData, true)
       if(ultimate) unit.ultimate = ultimate
       data[unit.baseId] = unit
     }

@@ -1,6 +1,6 @@
 'use strict'
 const { readFile } = require('./helper')
-
+const mongo = require('mongoapiclient')
 let errored = false
 const getMission = async(nodeId, data = {})=>{
   try{

@@ -2,7 +2,7 @@
 const CheckImages = require('./checkImages')
 const altName = {'species_wookiee_ls': 'Light Side Wookiee'}
 const { readFile, getStatMap } = require('./helper')
-
+const mongo = require('mongoapiclient')
 const enumType = {
   2: 'alignment',
   3: 'faction',

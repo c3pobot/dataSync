@@ -1,17 +1,13 @@
 'use strict'
-const getDataVersions = require('./getDataVersions')
+const { gameData } = require('helpers/gameData')
+const { dataVersions } = require('helpers/dataVersions')
 const buildData = require('./buildData')
 module.exports = async(gameVersion, localeVersion, forceFile = false)=>{
   try{
-    let status = false
     if(!gameVersion || !localeVersion) return;
-    console.log('Starting gameData.json update...')
-    
-    let updateNeeded = await getDataVersions(gameVersion, localeVersion, forceFile)
-    if(!updateNeeded) return true
-
+    if(!forceFile && gameData.version === gameVersion && dataVersions.localeVersion === localeVersion ) return true
     console.log('modified gameData.json update in progress...')
-    status = await buildData(gameVersion, localeVersion)
+    let status = await buildData(gameVersion, localeVersion)
     if(status === true){
       console.log('modified gameData.json update complete...')
       return true

@@ -1,5 +1,6 @@
 'use strict'
 const { readFile } = require('./helper')
+const mongo = require('mongoapiclient')
 const enumDiff = {I: 8, II: 9, III: 10}
 const getDifficulty = (id)=>{
   try{
