@@ -137,6 +137,7 @@ const getReconZoneDefinition = (reconZoneDefinition = [], lang = {})=>{
       tempDef.unitType = reconZoneDefinition[i].territoryBattleZoneUnitType
       tempDef.unitRarity = reconZoneDefinition[i].unitRarity
       tempDef.linkedConflictId = reconZoneDefinition[i].zoneDefinition.linkedConflictId
+      tempDef.maxUnitCountPerPlayer = +reconZoneDefinition[i].zoneDefinition.maxUnitCountPerPlayer
       tempDef.nameKey = lang[reconZoneDefinition[i].zoneDefinition.nameKey] || reconZoneDefinition[i].zoneDefinition.nameKey
       res[tempDef.zoneId] = tempDef
     }

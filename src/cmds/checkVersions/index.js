@@ -1,10 +1,12 @@
 'us strict'
 const getDataVersions = require('./getDataVersions')
-const dataUpdate = require('../dataUpdate')
 const getGameVersions = require('../../getGameVersions')
+
 const { dataVersions } = require('helpers/dataVersions')
 const { gameData } = require('helpers/gameData')
 const dataBuilder = require('../dataBuilder')
+const dataUpdate = require('../dataUpdate')
+const mapPlatoons = require('../mapPlatoons')
 let updateInProgress = false
 module.exports = async(forceFile = false)=>{
   try{
@@ -18,6 +20,7 @@ module.exports = async(forceFile = false)=>{
     let status = await dataUpdate(versions.gameVersion, versions.localeVersion, versions.assetVersion, forceFile)
     if(status) await dataBuilder(versions.gameVersion, versions.localeVersion, forceFile)
     updateInProgress = false
+    if(status) await mapPlatoons()
   }catch(e){
     updateInProgress = false
     console.error(e);
