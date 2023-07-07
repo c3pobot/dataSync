@@ -2,7 +2,7 @@
 require('./socket')
 const Fetch = require('./fetch')
 const getGameVersions = require('./getGameVersions')
-const SYNC_INTERVAL = +(process.env.SYNC_INTERVAL || 1)
+const SYNC_INTERVAL = +(process.env.SYNC_INTERVAL || 5)
 
 const checkVersions = require('./cmds/checkVersions')
 
