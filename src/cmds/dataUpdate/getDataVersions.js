@@ -1,11 +1,12 @@
 'use strict'
 const path = require('path')
-const Fetch = require('../../fetch')
+const fetch = require('helpers/fetch')
 const dataUrl = process.env.GITHUB_REPO_RAW_URL || 'https://raw.githubusercontent.com/swgoh-utils/gamedata/main'
 
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    const versions = await Fetch.json(path.join(dataUrl, 'versions.json'), 'GET')
+    let versions = await fetch(path.join(dataUrl, 'versions.json'), 'GET')
+    if(versions) versions = JSON.parse(versions)
     if(!versions.gameVersion || !versions?.localeVersion) return
     if(versions.gameVersion !== gameVersion) return
     if(versions.localeVersion !== localeVersion) return

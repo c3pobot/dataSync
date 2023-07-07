@@ -1,6 +1,6 @@
 'use strict'
 require('./socket')
-const Fetch = require('./fetch')
+require('./helpers/assetGetter')
 const getGameVersions = require('./getGameVersions')
 const SYNC_INTERVAL = +(process.env.SYNC_INTERVAL || 5)
 

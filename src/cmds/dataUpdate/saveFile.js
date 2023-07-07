@@ -1,6 +1,6 @@
 const path = require('path')
 const fs = require('fs')
-const Fetch = require('../../fetch')
+const fetch = require('helpers/fetch')
 const DATA_PATH = process.env.DATA_PATH || path.join(baseDir, 'data')
 const dataUrl = process.env.GITHUB_REPO_RAW_URL || 'https://raw.githubusercontent.com/swgoh-utils/gamedata/main'
 const ReadFile = async(file)=>{
@@ -29,7 +29,8 @@ module.exports = async(file, version, forceFile = false)=>{
       const fileExists = await Checkfile(file, version)
       if(fileExists) return true
     }
-    let obj = await Fetch.json(path.join(dataUrl, file), 'GET')
+    let obj = await fetch(path.join(dataUrl, file), 'GET')
+    if(obj) obj = JSON.parse(obj)
     if(obj?.data && obj?.version === version){
       await fs.writeFileSync(path.join(DATA_PATH, file), JSON.stringify(obj))
       return true
