@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const fetch = require('./fetch')
 const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(baseDir, 'public')
-const S3_BUCKET = process.env.S3_BUCKET || 'web-public'
+const S3_BUCKET = process.env.S3_BUCKET
 const S3_API_URI = process.env.S3API_URI
 const AE_URI = process.env.AE_URI
 const FetchImage = async(thumbnailName, version)=>{

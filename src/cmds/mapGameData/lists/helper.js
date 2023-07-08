@@ -46,11 +46,27 @@ const getRecipeList = async(recipeList, lang)=>{
     throw(e)
   }
 }
+const getSkillType = (id) =>{
+  if(id.startsWith("basic")){
+    return ("B")
+  }else if(id.startsWith("special")){
+    return ("S")
+  }else if(id.startsWith("lead")){
+    return ("L")
+  }else if(id.startsWith("unique")){
+    return ("U")
+  }else if(id.startsWith("ultimate")){
+    return ("ULT")
+  }else{
+    return ("None &nbsp;&nbsp;: ")
+  }
+}
 const getSkillMap = (skillList, abilityList, lang, excludeDesc = false)=>{
   try{
+
     if(!abilityList || !skillList || !lang || skillList?.length === 0 || abilityList?.length === 0) throw ('missing data for getSkillMap')
-    let list = {}
-    for(let i in skillList){
+    let list = {}, i = skillList?.length
+    while(i--){
       let s = skillList[i]
       let ability = abilityList.find(x=>x.id === s.abilityReference)
       if(!ability || !lang[ability?.nameKey]) continue;
@@ -60,6 +76,7 @@ const getSkillMap = (skillList, abilityList, lang, excludeDesc = false)=>{
         id: s.id,
         abilityId: ability.id,
         nameKey: lang[ability.nameKey],
+        type: getSkillType(s.id),
         maxTier: +ability.tier?.length + 1,
         isZeta: false,
         isOmi: false,
@@ -70,14 +87,15 @@ const getSkillMap = (skillList, abilityList, lang, excludeDesc = false)=>{
         omicronType: (enumOmicron[s.omicronMode] ? enumOmicron[s.omicronMode].type:null)
       }
       if(!excludeDesc) list[s.id].descKey = lang[descKey] || descKey
-      for(let i in s.tier){
-        if(list[s.id].zetaTier === 0 && s.tier[i].isZetaTier){
+      let t = s.tier.length
+      while(t--){
+        if(s.tier[t].isZetaTier && (list[s.id].zetaTier > +t || list[s.id].zetaTier === 0)){
           list[s.id].isZeta = true
-          list[s.id].zetaTier = +i + 2;
+          list[s.id].zetaTier = +t + 2;
         }
-        if(s.tier[i].isOmicronTier){
+        if(s.tier[t].isOmicronTier && (list[s.id].omiTier > +t || list[s.id].omiTier === 0)){
           list[s.id].isOmi = true
-          list[s.id].omiTier = +i + 2;
+          list[s.id].omiTier = +t + 2;
         }
       }
     }
@@ -89,9 +107,9 @@ const getSkillMap = (skillList, abilityList, lang, excludeDesc = false)=>{
 const getDamageType = (param = [])=>{
   try{
     const enumDamageType = { MAX_HEALTH: 1, ATTACK_DAMAGE: 6, ABILITY_POWER: 7 }
-    let res
-    if(param.length === 0) return res
-    for(let i in param){
+    let res, i = param.length
+    if(i === 0) return res
+    while(i--){
       if(enumDamageType[param[i]]) res = enumDamageType[param[i]]
       if(res > 0) break;
     }
@@ -102,9 +120,9 @@ const getDamageType = (param = [])=>{
 }
 const getEffectDamage = async(effectReference = [], data = {})=>{
   try{
-    let res = []
-    if(effectReference?.length === 0) return
-    for(let i in effectReference){
+    let res = [], i = effectReference?.length
+    if(i === 0) return
+    while(i--){
       let effect = data.effectList?.find(x=>x.id === effectReference[i].id)
       if(!effect || (effect?.multiplierAmountDecimal === 0)) continue;
       let tempObj = {id: effect.id, multiplierAmountDecimal: effect.multiplierAmountDecimal}
@@ -130,7 +148,7 @@ const getAbillityDamage = async(abilityId, data = {})=>{
       let tempObj = await getEffectDamage(tier[i].effectReference.filter(x=>x.id.includes('damage')), data)
       if(tempObj?.length > 0) res[abilityTier] = { skillTier: abilityTier, damage: tempObj }
     }
-    return res
+    if(Object.values(res).length > 0) return res
   }catch(e){
     throw(e)
   }
@@ -138,8 +156,8 @@ const getAbillityDamage = async(abilityId, data = {})=>{
 
 const getSkill = async(skillReference = [], data = {})=>{
   try{
-    if(skillReference.length === 0) throw ('skillReference length is 0 for getSkill')
     let res = {}
+    if(skillReference.length === 0) throw ('skillReference length is 0 for getSkill')
     for(let i in skillReference){
       if(!data.skillMap[skillReference[i].skillId]) throw('skill for '+skillReference[i].skillId+' not found for getSkill')
       res[skillReference[i].skillId] = JSON.parse(JSON.stringify(data.skillMap[skillReference[i].skillId]))
@@ -153,9 +171,9 @@ const getSkill = async(skillReference = [], data = {})=>{
 }
 const getCrewSkill = async(crew = [], data = {})=>{
   try{
-    if(crew.length === 0) return
-    let res = {}
-    for(let i in crew){
+    let res = {}, i = crew.length
+    if(i === 0) return
+    while(i--){
       let crewSkill = await getSkill(crew[i].skillReference, data)
       if(crewSkill) res = { ...res, ...crewSkill }
     }
@@ -190,18 +208,19 @@ const getOffenseStatId = async(abilityId, data = {})=>{
 }
 const getUltimate = async(limitBreakRef = [], data = {}, excludeDesc = false)=>{
   try{
-    let res = {}
-    for(let i in limitBreakRef){
+    let res = {}, i = limitBreakRef.length
+    if(i === 0) return
+    while(i--){
       let ability = data.abilityList.find(x=>x.id === limitBreakRef[i].abilityId)
       if(!ability || !data.lang[ability?.nameKey]) continue
       let descKey = ability.descKey
       if(ability.tier?.length > 0 && ability.tier[ability.tier.length - 1]) descKey = ability.tier[ability.tier.length - 1].descKey;
-      res[ability.id] = {id: ability.id, nameKey: data.lang[ability.nameKey]}
+      res[ability.id] = {id: ability.id, nameKey: data.lang[ability.nameKey], type: 'ULT'}
       if(!excludeDesc) res[ability.id].descKey = data.lang[descKey] || descKey
       let abilityDamage = await getAbillityDamage(ability.id, data)
       if(abilityDamage) res[ability.id].damage = abilityDamage
     }
-    return res
+    if(Object.values(res).length > 0) return res
   }catch(e){
     throw(e);
   }

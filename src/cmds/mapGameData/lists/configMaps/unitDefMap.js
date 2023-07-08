@@ -23,9 +23,7 @@ module.exports = async(gameVersion, localeVersion)=>{
         combatType: u.combatType,
         icon: u.thumbnailName,
         alignment: alignment,
-        crew: [],
         skill: {},
-        ultimate: {},
         isGL: u.legend
       }
       let offenseStatId = await getOffenseStatId(u.basicAttackRef?.abilityId, gameData)
