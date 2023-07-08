@@ -19,7 +19,7 @@ const FetchImage = async(thumbnailName, version)=>{
 }
 const uploadFile = async(fileName, file)=>{
   try{
-    if(!S3_API_URI || !S3_BUCKET || !fileName || !file) return
+    if(!S3_API_URI || !S3_BUCKET || !fileName || !file) throw('missing object storage info')
     let body = { Key: fileName, Bucket: S3_BUCKET, Body: file, Convert: 'base64'}
     return await fetch(path.join(S3_API_URI, 'put'), 'POST', body, {'Content-Type': 'application/json'})
   }catch(e){
