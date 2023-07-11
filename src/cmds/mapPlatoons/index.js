@@ -1,4 +1,5 @@
 'use strict'
+const log = require('logger')
 const mongo = require('mongoapiclient')
 let unitList
 const getUnit = (unit = [], unitRarity = 0, unitRelicTier = 0)=>{
@@ -61,7 +62,7 @@ const MapPlatoons = async(tbData = {})=>{
     }
     await mongo.set('tbPlatoonList', {_id: tbData.definitionId}, {id: tbData.definitionId, nameKey: tbDef.nameKey, platoons: Object.values(platoons)})
   }catch(e){
-    console.error(e);
+    throw(e);
   }
 }
 module.exports = async()=>{

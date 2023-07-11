@@ -123,7 +123,7 @@ const MapCampaign = async(campaign = [], units = {}, factions = {}, lang = {})=>
 }
 module.exports = async(errObj = {})=>{
   try{
-    console.log('updating journey guides')
+    log.info('updating journey guides')
     let files = {}, error = 0, events = {}
     for(let i in fileName){
       const tempFile = await ReadFile(baseDir+'/data/files/'+fileName[i]+'.json')
@@ -198,7 +198,7 @@ module.exports = async(errObj = {})=>{
           }
           /*
           let requiredUnits = tempEvent.requirement.unit ? Object.values(tempEvent.requirement.unit)?.filter(x=>x.required === true):[]
-          if(tempEvent.campaignNodeId === 'CAMPAIGN_EVENT_JABBA_GALACTICLEGEND') console.log(requiredUnits)
+          if(tempEvent.campaignNodeId === 'CAMPAIGN_EVENT_JABBA_GALACTICLEGEND') log.info(requiredUnits)
           if(+requiredUnits?.length > tempEvent.requirement.unitCount) tempEvent.requirement.unitCount = +requiredUnits?.length
           if(tempEvent.requirement?.rarity > 7) tempEvent.requirement.rarity = 7
           */

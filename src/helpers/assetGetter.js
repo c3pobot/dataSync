@@ -1,3 +1,4 @@
+const log = require('logger')
 const mongo = require('mongoapiclient')
 const path = require('path')
 const imagesToIgnore = require('./imagestoignore.json')
@@ -20,7 +21,7 @@ const checkMissing = async()=>{
     }
     setTimeout(checkMissing, 30000)
   }catch(e){
-    console.error(e);
+    log.error(e);
     setTimeout(checkMissing, 5000)
   }
 }
@@ -28,7 +29,7 @@ const saveImages = async(imgs = [], assetVersion, dir, collectionId)=>{
   try{
     if(imgs.length === 0 || !assetVersion || !dir) return
     let errored = []
-    console.log('trying download of '+imgs.length+' images for version '+assetVersion+' to '+dir+' for '+collectionId+'...')
+    log.info('trying download of '+imgs.length+' images for version '+assetVersion+' to '+dir+' for '+collectionId+'...')
     let i = imgs.length
     while(i--){
       if(imagesToIgnore.filter(x=>x === imgs[i]).length > 0) continue
@@ -38,11 +39,11 @@ const saveImages = async(imgs = [], assetVersion, dir, collectionId)=>{
       if(!status?.ETag) errored.push(imgs[i])
     }
     if(errored.length > 0){
-      console.log('Missing '+errored.length+' images for version '+assetVersion+' in '+dir+' for '+collectionId+'...')
+      log.info('Missing '+errored.length+' images for version '+assetVersion+' in '+dir+' for '+collectionId+'...')
       await mongo.set('missingAssets', {_id: collectionId}, {imgs: errored, dir: dir, assetVersion: assetVersion})
     }else{
       await mongo.del('missingAssets', {_id: collectionId})
-      console.log('Saved '+imgs?.length+' images for version '+assetVersion+' to '+dir+' for '+collectionId+'...')
+      log.info('Saved '+imgs?.length+' images for version '+assetVersion+' to '+dir+' for '+collectionId+'...')
     }
   }catch(e){
     throw(e)

@@ -12,6 +12,7 @@
   "author": "scuba75",
   "license": "ISC",
   "dependencies": {
+    "logger": "github:c3pobot/logger",
     "mongoapiclient": "github:c3pobot/mongoapiclient",
     "node-fetch": "^2.6.7",
     "socket.io-client": "^4.7.1",

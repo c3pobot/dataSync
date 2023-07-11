@@ -1,4 +1,5 @@
 'use strict'
+const log = require('logger')
 const getDataFiles = require('./getDataFiles')
 const mapGameData = require('../mapGameData')
 const { dataVersions } = require('helpers/dataVersions')
@@ -17,11 +18,11 @@ module.exports = async(gameVersion, localeVersion, assetVersion, forceFile = fal
       }
     }
     if(forceFile) datamapNeeded = true
-    console.log('Starting game data update...')
+    log.info('Starting game data update...')
     if(forceFile){
-      console.log('Getting new files...')
+      log.info('Getting new files...')
     }else{
-      console.log('Checking files...')
+      log.info('Checking files...')
     }
     if(dataVersions.gameVersion === gameVersion && dataVersions.localeVersion === localeVersion){
       if(forceFile){
@@ -35,11 +36,11 @@ module.exports = async(gameVersion, localeVersion, assetVersion, forceFile = fal
     if(!status){
       throw('Error getting game and locale files...')
     }else{
-      console.log('game and locale files are up to date...')
+      log.info('game and locale files are up to date...')
     }
     if(status === true && datamapNeeded) status = await mapGameData.update(gameVersion, localeVersion, assetVersion, missingCollection)
     if(status == true){
-      console.log('completed game data update...')
+      log.info('completed game data update...')
       dataVersions.gameVersion = gameVersion
       dataVersions.localeVersion = localeVersion
       return true

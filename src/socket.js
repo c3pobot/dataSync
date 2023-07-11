@@ -1,4 +1,5 @@
 'use strict'
+const log = require('logger')
 const { gameData } = require('helpers/gameData')
 const POD_NAME = process.env.POD_NAME || 'datasync'
 const BOT_BRIDGE_URI = process.env.BOT_BRIDGE_URI
@@ -9,7 +10,7 @@ socket.on('connect', ()=>{
   sendSocketIdentity()
   if(notify){
     notify = false
-    console.log(POD_NAME+' socket.io is connected to bot bridge...')
+    log.info(POD_NAME+' socket.io is connected to bot bridge...')
   }
 })
 socket.on('request', (cmd, obj = {}, callback)=>{
@@ -19,7 +20,7 @@ socket.on('request', (cmd, obj = {}, callback)=>{
     if(cmd === 'getGameData') res = gameData
     if(callback) callback(res)
   }catch(e){
-    console.error(e);
+    log.error(e);
     if(callback) callback()
   }
 })
@@ -28,7 +29,7 @@ const sendSocketIdentity = async()=>{
     let res = await SocketEmit('identify', { podName: POD_NAME })
     if(!res || res?.status !== 'ok') setTimeout(sendSocketIdentity, 5000)
   }catch(e){
-    console.error(e);
+    log.error(e);
     setTimeout(sendSocketIdentity, 5000)
   }
 }

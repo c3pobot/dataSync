@@ -1,4 +1,7 @@
 'use strict'
+const log = require('logger')
+let logLevel = process.env.LOG_LEVEL || log.Level.INFO;
+log.setLevel(logLevel);
 require('./socket')
 require('./helpers/assetGetter')
 const getGameVersions = require('./getGameVersions')
@@ -9,10 +12,10 @@ const checkVersions = require('./cmds/checkVersions')
 const CheckAPIReady = async()=>{
   const obj = await getGameVersions()
   if(obj?.gameVersion){
-    console.log('Game API is ready on dataSync Server...')
+    log.info('Game API is ready on dataSync Server...')
     StartSync()
   }else{
-    console.log('Game API is not ready on dataSync Server. Will try again in 5 seconds...')
+    log.info('Game API is not ready on dataSync Server. Will try again in 5 seconds...')
     setTimeout(()=>CheckAPIReady(), 5000)
   }
 }
@@ -21,7 +24,7 @@ const StartSync = async()=>{
     await checkVersions()
     setTimeout(StartSync, SYNC_INTERVAL * 60 * 1000)
   }catch(e){
-    console.error(e);
+    log.error(e);
     setTimeout(StartSync, 5000)
   }
 }

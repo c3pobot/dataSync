@@ -1,4 +1,5 @@
 'use strict'
+const log = require('logger')
 const dataList = require('./dataList')
 const { readFile } = require('../mapGameData/lists/helper')
 const { gameData } = require('helpers/gameData')
@@ -10,10 +11,10 @@ module.exports = async(gameVersion, localeVersion)=>{
     let count = 0, totalCount = 0
     for(let i in dataList){
       count++
-      console.log('getting '+dataList[i]+'...')
+      log.info('getting '+dataList[i]+'...')
       let map = (await mongo.find('configMaps', {_id: dataList[i]}))[0]
       if(map?.version === gameVersion && map.data){
-        console.log('added '+dataList[i]+' to gameData.json...')
+        log.info('added '+dataList[i]+' to gameData.json...')
         data[dataList[i]] = map.data
         totalCount++
       }else{

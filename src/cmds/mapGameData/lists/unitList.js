@@ -40,7 +40,10 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       for(let f in u.categoryId) unit.faction[u.categoryId[f]] = u.categoryId[f];
       let offenseStatId = await getOffenseStatId(u.basicAttackRef?.abilityId, gameData)
       if(offenseStatId) unit.offenseStatId = offenseStatId
-      if(u.crew?.length > 0) unit.crew = u.crew?.map(x=>x.unitId)
+      if(u.crew?.length > 0){
+        unit.crew = u.crew?.map(x=>x.unitId)
+        unitMap[u.baseId].crew = unit.crew
+      }
       let skill = await getSkill(u.skillReference, gameData)
       if(skill) unit.skill = { ...unit.skill,...skill }
       let crewSkill = await getCrewSkill(u.crew, gameData)

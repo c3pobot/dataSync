@@ -23,6 +23,6 @@ module.exports = async(forceFile = false)=>{
     if(status) await mapPlatoons()
   }catch(e){
     updateInProgress = false
-    console.error(e);
+    throw(e);
   }
 }

@@ -1,4 +1,5 @@
 'use strict'
+const log = require('logger')
 const lists = require('./lists')
 const mongo = require('mongoapiclient')
 const checkVersion = (gameVersion, localeVersion, assetVersion, data)=>{
@@ -19,16 +20,16 @@ module.exports.update = async(gameVersion, localeVersion, assetVersion, missing 
 
     for(let i in lists){
       if(missing.length > 0 && missing.filter(x=>x === i).length === 0) continue;
-      console.log(i+' update in progress...')
+      log.info(i+' update in progress...')
       status = await lists[i](gameVersion, localeVersion, assetVersion)
       if(status === true){
         await mongo.set('versions', {_id: i}, { gameVersion: gameVersion, localeVersion: localeVersion, assetVersion: assetVersion })
-        console.log(i+' update complete...')
+        log.info(i+' update complete...')
       }else{
         throw(i+' update error...')
       }
     }
-    console.log('gamedata update complete...')
+    log.info('gamedata update complete...')
     return status
   }catch(e){
     throw(e);
@@ -45,11 +46,11 @@ module.exports.check = async(gameVersion, localeVersion, assetVersion)=>{
         if(status === true){
           totalCount++;
         }else{
-          console.log('missing collection '+i+'...')
+          log.info('missing collection '+i+'...')
           missing.push(i)
         }
       }else{
-        console.log('missing collection '+i+'...')
+        log.info('missing collection '+i+'...')
         missing.push(i)
       }
     }

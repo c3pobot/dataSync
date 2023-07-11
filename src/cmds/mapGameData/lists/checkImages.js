@@ -1,3 +1,4 @@
+const log = require('logger')
 'use strict'
 const fs = require('fs')
 const mongo = require('mongoapiclient')
@@ -22,7 +23,7 @@ module.exports = async(imgs = [], assetVersion, dir, collectionId)=>{
     let errored = []
     let assets = await getFileNames(path.join(PUBLIC_DIR, dir))
     let missingAssets = imgs?.filter(x=>!assets?.includes(x+'.png'))
-    console.log('Missing: '+missingAssets.length)
+    log.info('Missing: '+missingAssets.length)
     if(!missingAssets || missingAssets.length === 0) return
     await mongo.set('missingAssets', {_id: collectionId}, {imgs: missingAssets, dir: dir, assetVersion: assetVersion})
   }catch(e){

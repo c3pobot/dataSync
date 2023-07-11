@@ -1,3 +1,4 @@
+const log = require('logger')
 const path = require('path')
 const fs = require('fs')
 const fetch = require('helpers/fetch')
@@ -8,7 +9,7 @@ const ReadFile = async(file)=>{
     const obj = fs.readFileSync(path.join(DATA_PATH, file))
     if(obj) return JSON.parse(obj)
   }catch(e){
-    console.log('error reading '+file)
+    log.info('error reading '+file)
   }
 }
 const Checkfile = async(file, version)=>{
@@ -36,6 +37,6 @@ module.exports = async(file, version, forceFile = false)=>{
       return true
     }
   }catch(e){
-    cthrow(e);
+    throw(e);
   }
 }

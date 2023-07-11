@@ -9,6 +9,6 @@ module.exports = async()=>{
     if(!res) res = {}
     return res
   }catch(e){
-    console.error(e);
+    throw(e);
   }
 }
