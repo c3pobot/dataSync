@@ -1,8 +1,6 @@
 'use strict'
-const fs = require('fs')
 const path = require('path')
 const fetch = require('./fetch')
-const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(baseDir, 'public')
 const S3_BUCKET = process.env.S3_BUCKET
 const S3_API_URI = process.env.S3API_URI
 const AE_URI = process.env.AE_URI
@@ -20,17 +18,10 @@ const FetchImage = async(thumbnailName, version)=>{
 const uploadFile = async(fileName, file)=>{
   try{
     if(!S3_API_URI || !S3_BUCKET || !fileName || !file) throw('missing object storage info')
-    let body = { Key: fileName, Bucket: S3_BUCKET, Body: file, Convert: 'base64'}
+    let body = { Key: fileName, Bucket: S3_BUCKET, Body: file }
     return await fetch(path.join(S3_API_URI, 'put'), 'POST', body, {'Content-Type': 'application/json'})
   }catch(e){
     throw(e);
-  }
-}
-const writeFile = async(name, data, dir)=>{
-  try{
-    fs.writeFileSync(path.join(PUBLIC_DIR, dir, name), data, {encoding: 'base64'})
-  }catch(e){
-    throw(e)
   }
 }
 module.exports = async(version, thumbnailName, dir)=>{
@@ -38,7 +29,6 @@ module.exports = async(version, thumbnailName, dir)=>{
     if(!version || !thumbnailName || !dir) return
     let img = await FetchImage(thumbnailName, version)
     if(!img) return
-    await writeFile(thumbnailName+'.png', img, dir)
     return await uploadFile(path.join(dir, thumbnailName+'.png'), img)
   }catch(e){
     throw(e);
