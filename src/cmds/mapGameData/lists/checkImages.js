@@ -4,7 +4,7 @@ const fetch = require('helpers/fetch')
 const mongo = require('mongoapiclient')
 const path = require('path')
 const S3_BUCKET = process.env.S3_BUCKET
-const S3_API_URI = process.env.S3API_URI
+const S3_API_URI = process.env.S3_API_URI
 
 const getRemoteList = async(dir)=>{
   try{

@@ -2,6 +2,27 @@
 const { getSkillMap, readFile, getOffenseStatId, getSkill, getCrewSkill, getUltimate, checkUnitImages } = require('./helper')
 const nameKeyPayload = {include: false, 'data.unit': 'unit', 'data.unit1': 'unit', 'data.unit2': 'unit', 'data.leader': 'unit', 'data.character': 'character', 'data.ship': 'ship'}
 const mongo = require('mongoapiclient')
+const getTierStat = (baseStat = [])=>{
+  try{
+    let res = {}
+    for(let i in baseStat) res[baseStat[i].unitStatId] = baseStat[i].unscaledDecimalValue;
+    return res
+  }catch(e){
+    throw(e)
+  }
+}
+const getUnitTier = (unitTier = [])=>{
+  try{
+    let res = {}
+    for(let i in unitTier){
+      res[+i + 1] = { gear: unitTier[i].equipmentSet, stat: {} }
+      res[+i + 1].stat = getTierStat(unitTier[i].baseStat.stat)
+    }
+    return res
+  }catch(e){
+    throw(e)
+  }
+}
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
@@ -37,6 +58,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
         faction: {},
         isGL: u.legend
       }
+      if(unit.combatType === 1) unit.gear = getUnitTier(u.unitTier)
       for(let f in u.categoryId) unit.faction[u.categoryId[f]] = u.categoryId[f];
       let offenseStatId = await getOffenseStatId(u.basicAttackRef?.abilityId, gameData)
       if(offenseStatId) unit.offenseStatId = offenseStatId
@@ -50,6 +72,12 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       if(crewSkill) unit.skill = { ...unit.skill, ...crewSkill }
       let ultimate = await getUltimate(u.limitBreakRef.filter(x=>x.powerAdditiveTag === 'ultimate'), gameData)
       if(ultimate) unit.ultimate = ultimate
+      if(unit.skill && unit.combatType === 1){
+        let skillArray = Object.values(unit.skill)
+        unitMap[u.baseId].zeta = skillArray?.filter(x=>x.isZeta).length || 0
+        unitMap[u.baseId].omi = skillArray?.filter(x=>x.isOmi).length || 0
+        if(unitMap[u.baseId].omi) unitMap[u.baseId].omiType = skillArray?.filter(x=>x.isOmi)[0]?.omicronMode || 0
+      }
       await mongo.set('unitList', {_id: unit.baseId}, unit)
     }
     if(images?.length > 0){

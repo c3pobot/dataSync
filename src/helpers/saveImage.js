@@ -2,7 +2,7 @@
 const path = require('path')
 const fetch = require('./fetch')
 const S3_BUCKET = process.env.S3_BUCKET
-const S3_API_URI = process.env.S3API_URI
+const S3_API_URI = process.env.S3_API_URI
 const AE_URI = process.env.AE_URI
 const FetchImage = async(thumbnailName, version)=>{
   try{

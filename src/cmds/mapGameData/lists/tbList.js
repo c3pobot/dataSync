@@ -58,6 +58,7 @@ const getConflictZoneDefinition = (conflictZoneDefinition = [], lang = {})=>{
       tempDef.nameKey = lang[conflictZoneDefinition[i].zoneDefinition.nameKey] || conflictZoneDefinition[i].zoneDefinition.nameKey
       tempDef.phase = GetPhase(conflictZoneDefinition[i].zoneDefinition.zoneId)
       tempDef.conflict = GetConflict(conflictZoneDefinition[i].zoneDefinition.zoneId)
+      if(conflictZoneDefinition[i].zoneDefinition.zoneId.includes('_bonus')) tempDef.conflict += '-Bonus'
       tempDef.type = GetType(conflictZoneDefinition[i].territoryBattleZoneUnitType, conflictZoneDefinition[i].forceAlignment)
       tempDef.sort = GetSort(tempDef.type, tempDef.conflict)
       tempDef.unitType = conflictZoneDefinition[i].territoryBattleZoneUnitType
@@ -194,18 +195,19 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       if(!statCategory) continue
       let reconZoneDefinition = getReconZoneDefinition(tb.reconZoneDefinition, lang)
       if(!reconZoneDefinition) continue
-      autocomplete.push({name: tb.nameKey, value: tb.id})
+
       let tempObj = { id: tb.id, nameKey: lang[tb.nameKey] || tb.nameKey, roundCount: tb.roundCount}
       tempObj.conflictZoneDefinition = conflictZoneDefinition
       tempObj.strikeZoneDefinition = strikeZoneDefinition
       tempObj.covertZoneDefinition = covertZoneDefinition
       tempObj.statCategory = statCategory
       tempObj.reconZoneDefinition = reconZoneDefinition
+      autocomplete.push({name: tempObj.nameKey, value: tb.id})
       await mongo.set('tbList', {_id: tb.id}, tempObj)
     }
     if(autocomplete?.length > 0){
       await mongo.rep('autoComplete', {_id: 'tb-name'}, {data: autocomplete, include: true})
-      //await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.tb-name': 'tb-name'} )
+      await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.tb-name': 'tb-name'} )
     }
     lang = null, tbList = null
     if(autocomplete?.length > 0) return true

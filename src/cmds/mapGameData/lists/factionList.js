@@ -54,7 +54,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       if(!factionMap[i].id.startsWith('special') && factionMap[i].nameKey && factionMap[i].nameKey !== 'Placeholder' && factionMap[i].uiFilter){
         if(factionMap[i].units.length === 0) continue
         autoComplete.push({name: factionMap[i].nameKey, value: factionMap[i].id})
-        map[factionMap[i].id] = {id: factionMap[i].id, nameKey: factionMap[i].nameKey}
+        map[factionMap[i].id] = {id: factionMap[i].id, nameKey: factionMap[i].nameKey, units: factionMap[i].units}
         await mongo.set('factionList', {_id: factionMap[i].id}, factionMap[i])
       }else{
         if(factionMap[i].id) await mongo.set('hiddenFactionList', {_id: 'missing/'+factionMap[i].id}, factionMap[i])
@@ -62,7 +62,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     }
     if(!errored && autoComplete.length > 0 && Object.values(map)?.length > 0){
       await mongo.set('autoComplete', {_id: 'faction'}, {include: true, data: autoComplete})
-      await mongo.set('autoComplete', {_id: 'factionMap'}, {data: map})
+      await mongo.set('configMaps', {_id: 'factionMap'}, {data: map})
       await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.faction': 'faction'} )
     }
     lang = null, unitList = null, categoryList = null, factionMap = null, unitMap = null

@@ -2,7 +2,7 @@
 const path = require('path')
 const mongo = require('mongoapiclient')
 const fetch = require('./helpers/fetch')
-const GAME_API_URI = process.env.CLIENT_URL
+const GAME_API_URI = process.env.GAME_CLIENT_URL
 module.exports = async()=>{
   try{
     let res = { gameVersion: null, localeVersion: null, assetVersion: null }

@@ -4,8 +4,8 @@ const mongo = require('mongoapiclient')
 let unitList
 const getUnit = (unit = [], unitRarity = 0, unitRelicTier = 0)=>{
   try{
-    let i = unit.length, res = []
-    while(i--){
+    let res = []
+    for(let i in unit){
       let baseId = unit[i].unitIdentifier?.split(':')[0]
       if(!baseId || !unitList[baseId]) continue;
       let unitDef = unitList[baseId]
@@ -18,8 +18,8 @@ const getUnit = (unit = [], unitRarity = 0, unitRelicTier = 0)=>{
 }
 const getSquad = (squad = [], pDef = {})=>{
   try{
-    let i = squad.length, res = []
-    while(i--){
+    let res = []
+    for(let i in squad){
       let units = getUnit(squad[i].unit, pDef.unitRarity, pDef.unitRelicTier)
       if(units?.length > 0) res = res.concat(units)
     }
@@ -30,8 +30,8 @@ const getSquad = (squad = [], pDef = {})=>{
 }
 const getPlatoon = (platoon = [], pDef = {})=>{
   try{
-    let i = platoon.length, res = { totalPoints: 0, squads: []}
-    while(i--){
+    let res = { totalPoints: 0, squads: [] }
+    for(let i in platoon){
       let squad = getSquad(platoon[i].squad, pDef)
       let points = pDef.platoonDefinition[platoon[i].id]?.score || 0
       res.totalPoints += +points

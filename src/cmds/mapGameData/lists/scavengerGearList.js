@@ -1,17 +1,17 @@
 'use strict'
 const { readFile } = require('./helper')
 const mongo = require('mongoapiclient')
-const getConsumable = async(consumable = [], data = {})=>{
+const getConsumable = (consumable = [], data = {})=>{
   try{
-    let res = []
-    if(consumable?.length === 0) return res
+    let res = {}
+    if(consumable?.length === 0) return
     for(let i in consumable){
       let item = data.equipmentList?.find(x=>x.id === consumable[i].id)
       if(!item) item = data.materialList?.find(x=>x.id === consumable[i].id)
       if(!item) continue
-      res.push({id: consumable[i].id, nameKey: data.lang[item.nameKey] || item.nameKey, pointValue: consumable[i].pointValue})
+      res[consumable[i].id] = {id: consumable[i].id, nameKey: data.lang[item.nameKey] || item.nameKey, pointValue: consumable[i].pointValue}
     }
-    return res
+    if(Object.values(res)?.length > 0) return res
   }catch(e){
     throw(e)
   }
@@ -24,14 +24,17 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     let lang = await readFile('Loc_ENG_US.txt.json', localeVersion)
     if(!setList || !lang || !equipmentList || !materialList) return
 
-    let list = [], gameData = { lang: lang, equipmentList: equipmentList, materialList: materialList }
+    let gameData = { lang: lang, equipmentList: equipmentList, materialList: materialList }
     for(let i in setList){
       let output = materialList.find(x=>x.id === setList[i].output?.item?.id)
       if(!output) output = equipmentList.find(x=>x.id === setList[i].output?.item?.id)
       if(!output) continue
       let tempObj = {id: setList[i].output.item.id, pointValue: setList[i].output.item.pointValue, nameKey: lang[output.nameKey] || output.nameKey, gear: []}
-      tempObj.gear = await getConsumable(setList[i].consumable, gameData)
-      await mongo.set('scavengerGearList', {_id: tempObj.id}, tempObj)
+      let gearList = getConsumable(setList[i].consumable, gameData)
+      if(gearList){
+        tempObj.gear = gearList
+        await mongo.set('scavengerGearList', {_id: tempObj.id}, tempObj)
+      }
     }
     setList = null, equipmentList = null, materialList = null, lang = null
     return true
