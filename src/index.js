@@ -2,7 +2,6 @@
 const log = require('logger')
 let logLevel = process.env.LOG_LEVEL || log.Level.INFO;
 log.setLevel(logLevel);
-require('./socket')
 require('./helpers/assetGetter')
 const getGameVersions = require('./getGameVersions')
 const SYNC_INTERVAL = +(process.env.SYNC_INTERVAL || 5)
@@ -13,6 +12,7 @@ const CheckAPIReady = async()=>{
   const obj = await getGameVersions()
   if(obj?.gameVersion){
     log.info('Game API is ready on dataSync Server...')
+    require('./expressServer')
     StartSync()
   }else{
     log.info('Game API is not ready on dataSync Server. Will try again in 5 seconds...')
