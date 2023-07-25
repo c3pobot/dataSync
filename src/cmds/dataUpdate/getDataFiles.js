@@ -10,7 +10,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion, forceFile = fal
     let count = 0, totalCount = 0
     let versions = await getDataVersions(gameVersion, localeVersion, assetVersion)
     if(!versions){
-      log.info('github files not updated yet...')
+      log.info('object storage files not updated yet...')
       return
     }
     if(versions) totalCount = Object.values(versions)?.filter(x=>x === gameVersion)?.length

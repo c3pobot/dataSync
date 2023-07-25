@@ -1,7 +1,6 @@
 'us strict'
-const getDataVersions = require('./getDataVersions')
 const getGameVersions = require('../../getGameVersions')
-
+const getDataVersions = require('./getDataVersions')
 const { dataVersions } = require('helpers/dataVersions')
 const { gameData } = require('helpers/gameData')
 const dataBuilder = require('../dataBuilder')
@@ -13,9 +12,9 @@ module.exports = async(forceFile = false)=>{
     if(updateInProgress) return
     let versions = await getGameVersions()
     if(!versions?.gameVersion || !versions?.localeVersion || !versions?.assetVersion) return
-    let gitVersions = await getDataVersions()
-    if(!gitVersions?.gameVersion || !gitVersions?.localeVersion) return
     if(!forceFile && dataVersions.gameVersion === versions.gameVersion && dataVersions.localeVersion === versions.localeVersion && gameData.version === versions.gameVersion) return
+    let s3Versions = await getDataVersions()
+    if(!s3Versions || s3Versions?.gameVersion !== versions.gameVersion || s3Versions?.localeVersion !== versions.localeVersion) return
     updateInProgress = true
     let status = await dataUpdate(versions.gameVersion, versions.localeVersion, versions.assetVersion, forceFile)
     if(status) await dataBuilder(versions.gameVersion, versions.localeVersion, forceFile)

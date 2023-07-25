@@ -1,12 +1,12 @@
 'use strict'
 const path = require('path')
 const fetch = require('helpers/fetch')
-const dataUrl = process.env.GITHUB_REPO_RAW_URL || 'https://raw.githubusercontent.com/swgoh-utils/gamedata/main'
+const S3_API_URI = process.env.S3_API_URI
+const S3_BUCKET = process.env.S3_DATA_BUCKET || 'gamedata'
 
 module.exports = async(gameVersion, localeVersion, assetVersion)=>{
   try{
-    let versions = await fetch(path.join(dataUrl, 'versions.json'), 'GET')
-    if(versions) versions = JSON.parse(versions)
+    let versions = await fetch(path.join(S3_API_URI, 'get?Bucket='+S3_BUCKET+'&Key=versions.json'))
     if(!versions.gameVersion || !versions?.localeVersion) return
     if(versions.gameVersion !== gameVersion) return
     if(versions.localeVersion !== localeVersion) return

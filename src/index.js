@@ -1,7 +1,5 @@
 'use strict'
 const log = require('logger')
-let logLevel = process.env.LOG_LEVEL || log.Level.INFO;
-log.setLevel(logLevel);
 require('./helpers/assetGetter')
 const getGameVersions = require('./getGameVersions')
 const SYNC_INTERVAL = +(process.env.SYNC_INTERVAL || 5)
