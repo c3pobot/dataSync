@@ -36,7 +36,7 @@ const saveImages = async(imgs = [], assetVersion, dir, collectionId)=>{
       let status = await checkAssetName(imgs[i])
       if(!status) continue
       status = await SaveImage(assetVersion, imgs[i], dir)
-      if(!status?.ETag) errored.push(imgs[i])
+      if(!status) errored.push(imgs[i])
     }
     if(errored.length > 0){
       log.info('Missing '+errored.length+' images for version '+assetVersion+' in '+dir+' for '+collectionId+'...')

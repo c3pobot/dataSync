@@ -1,22 +1,14 @@
 'use strict'
 const log = require('logger')
 const fetch = require('helpers/fetch')
+const s3client = require('s3client')
 const mongo = require('mongoapiclient')
 const path = require('path')
-const S3_BUCKET = process.env.S3_BUCKET
-const S3_API_URI = process.env.S3_API_URI
+const S3_BUCKET = process.env.S3_IMAGE_BUCKET
 
-const getRemoteList = async(dir)=>{
-  try{
-    if(!S3_BUCKET || !S3_API_URI ||!dir) throw('missing object storage info')
-    return await fetch(path.join(S3_API_URI, 'list?Bucket='+S3_BUCKET+'&Prefix='+dir+'/'))
-  }catch(e){
-    throw(e)
-  }
-}
 const checkImages = async(imgs = [], assetVersion, dir, collectionId)=>{
   try{
-    let remoteList = await getRemoteList(dir)
+    let remoteList = await s3client.list(S3_BUCKET, dir)
     if(!remoteList) remoteList = []
     remoteList = remoteList.map(x=>x.Key)
     let missing = imgs.filter(x=>!remoteList?.includes(dir+'/'+x+'.png'))

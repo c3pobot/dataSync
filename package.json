@@ -18,6 +18,7 @@
     "logger": "github:c3pobot/logger",
     "mongoapiclient": "github:c3pobot/mongoapiclient",
     "node-fetch": "^2.6.12",
+    "s3client": "github:c3pobot/s3client",
     "uuid": "^9.0.0"
   }
 }

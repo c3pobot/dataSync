@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const fetch = require('helpers/fetch')
 const DATA_PATH = process.env.DATA_PATH || path.join(baseDir, 'data')
-const S3_API_URI = process.env.S3_API_URI
+const s3client = require('s3client')
 const S3_BUCKET = process.env.S3_DATA_BUCKET || 'gamedata'
 
 const ReadFile = async(file)=>{
@@ -32,7 +32,7 @@ module.exports = async(file, version, forceFile = false)=>{
       const fileExists = await Checkfile(file, version)
       if(fileExists) return true
     }
-    let obj = await fetch(path.join(S3_API_URI, 'get?Bucket='+S3_BUCKET+'&Key='+file))
+    let obj = await s3client.get(S3_BUCKET, file)
     if(obj?.data && obj?.version === version){
       await fs.writeFileSync(path.join(DATA_PATH, file), JSON.stringify(obj))
       return true
