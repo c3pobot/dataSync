@@ -206,8 +206,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       await mongo.set('tbList', {_id: tb.id}, tempObj)
     }
     if(autocomplete?.length > 0){
-      await mongo.rep('autoComplete', {_id: 'tb-name'}, {data: autocomplete, include: true})
-      await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.tb-name': 'tb-name'} )
+      //await mongo.rep('autoComplete', {_id: 'tb-name'}, {data: autocomplete, include: true})
+      //await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.tb-name': 'tb-name'} )
     }
     lang = null, tbList = null
     if(autocomplete?.length > 0) return true

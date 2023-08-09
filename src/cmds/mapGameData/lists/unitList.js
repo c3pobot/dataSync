@@ -85,10 +85,10 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     }
     if(autoComplete.length > 0 && Object.values(unitMap)?.length > 0){
       await mongo.set('configMaps', {_id: 'unitMap'}, {data: unitMap})
-      await mongo.set('autoComplete', {_id: 'unit'}, {data: autoComplete, include: true})
+      //await mongo.set('autoComplete', {_id: 'unit'}, {data: autoComplete, include: true})
       await mongo.set('autoComplete', {_id: 'character'}, {data: autoComplete.filter(x=>x.combatType === 1), include: true})
       await mongo.set('autoComplete', {_id: 'ship'}, {data: autoComplete.filter(x=>x.combatType === 2), include: true})
-      await mongo.set('autoComplete', {_id: 'nameKeys'}, nameKeyPayload)
+      //await mongo.set('autoComplete', {_id: 'nameKeys'}, nameKeyPayload)
     }
     lang = null, abilityList = null, skillList = null, skillMap = null, unitList = null, effectList = null, units = null
     if(autoComplete.length > 0) return true

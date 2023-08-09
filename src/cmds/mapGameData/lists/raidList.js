@@ -129,8 +129,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
     }
     if(!errored && gameData.images?.length > 0 && assetVersion) CheckImages(gameData.images, assetVersion, 'thumbnail', 'raidList')
     if(!errored && autoComplete?.length > 0){
-      await mongo.set('autoComplete', {_id: 'raid'}, {data: autoComplete, include: true})
-      await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.raid': 'raid'})
+      //await mongo.set('autoComplete', {_id: 'raid'}, {data: autoComplete, include: true})
+      //await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.raid': 'raid'})
     }
     guildRaidList = null, campainList = null, rewardList = null, lang = null, guildCampaign = null, campaignNode = null
     if(!errored && autoComplete?.length > 0) return true

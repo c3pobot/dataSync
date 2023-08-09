@@ -61,9 +61,9 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       }
     }
     if(!errored && autoComplete.length > 0 && Object.values(map)?.length > 0){
-      await mongo.set('autoComplete', {_id: 'faction'}, {include: true, data: autoComplete})
+      //await mongo.set('autoComplete', {_id: 'faction'}, {include: true, data: autoComplete})
       await mongo.set('configMaps', {_id: 'factionMap'}, {data: map})
-      await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.faction': 'faction'} )
+    //  await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.faction': 'faction'} )
     }
     lang = null, unitList = null, categoryList = null, factionMap = null, unitMap = null
     if(!errored) return true

@@ -33,7 +33,7 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
       }
     }
     if(autoComplete?.length > 0){
-      await mongo.set('autoComplete', {_id: 'journey'}, {data: autoComplete, include: true})
+      //await mongo.set('autoComplete', {_id: 'journey'}, {data: autoComplete, include: true})
       await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.journey': 'journey'})
     }
     return true

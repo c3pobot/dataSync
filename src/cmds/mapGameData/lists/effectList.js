@@ -278,8 +278,8 @@ module.exports = async(gameVersion, localeVersion, assetVersion)=>{
         }
       }
       if(effectAutoComplete?.length > 0){
-        await mongo.set('autoComplete', {_id: 'effect'}, {include: true, data: effectAutoComplete})
-        await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.effect': 'effect'} )
+        //await mongo.set('autoComplete', {_id: 'effect'}, {include: true, data: effectAutoComplete})
+        //await mongo.set('autoComplete', {_id: 'nameKeys'}, {include: false, 'data.effect': 'effect'} )
       }
       if(missingEffects?.length > 0){
         for(let i in missingEffects){
