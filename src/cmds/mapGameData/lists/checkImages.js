@@ -15,7 +15,7 @@ const checkImages = async(imgs = [], assetVersion, dir, collectionId)=>{
     if(!missing) throw('Error determing missing assets for '+dir)
     log.info('Missing '+missing.length+' image for '+dir+'...')
     if(missing.length === 0) return
-    await mongo.set('missingAssets', {_id: collectionId}, {imgs: missing, dir: dir, assetVersion: assetVersion})
+    await mongo.set('missingAssetsNew', {_id: collectionId}, {imgs: missing, dir: dir, assetVersion: assetVersion})
     return
   }catch(e){
     log.error(e)

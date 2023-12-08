@@ -24,6 +24,7 @@ module.exports = async(gameVersion, localeVersion)=>{
     if(count > 0 && count === totalCount){
       gameData.data = JSON.parse(JSON.stringify(data))
       gameData.version = gameVersion
+      mongo.set('botSettings', {_id: 'gameData'}, gameData)
       return true
     }
   }catch(e){

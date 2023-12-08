@@ -14,7 +14,7 @@ const checkAssetName = (img)=>{
 }
 const checkMissing = async()=>{
   try{
-    let list = await mongo.find('missingAssets', {})
+    let list = await mongo.find('missingAssetsNew', {})
     if(list?.length > 0){
       let i = list.length
       while(i--) await saveImages(list[i].imgs, list[i].assetVersion, list[i].dir, list[i]._id)
@@ -40,9 +40,9 @@ const saveImages = async(imgs = [], assetVersion, dir, collectionId)=>{
     }
     if(errored.length > 0){
       log.info('Missing '+errored.length+' images for version '+assetVersion+' in '+dir+' for '+collectionId+'...')
-      await mongo.set('missingAssets', {_id: collectionId}, {imgs: errored, dir: dir, assetVersion: assetVersion})
+      await mongo.set('missingAssetsNew', {_id: collectionId}, {imgs: errored, dir: dir, assetVersion: assetVersion})
     }else{
-      await mongo.del('missingAssets', {_id: collectionId})
+      await mongo.del('missingAssetsNew', {_id: collectionId})
       log.info('Saved '+imgs?.length+' images for version '+assetVersion+' to '+dir+' for '+collectionId+'...')
     }
   }catch(e){
